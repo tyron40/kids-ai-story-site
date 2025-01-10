@@ -17,6 +17,7 @@ import { toast } from 'react-toastify'
 import { useUser } from '@clerk/nextjs'
 import { UserDetailContext } from '../_context/UserDetailConext'
 import { eq } from 'drizzle-orm'
+import TotalChaptersSelect from './_components/TotalChaptersSelect'
 
 const CREATE_STORY_PROMPT=process.env.NEXT_PUBLIC_CREATE_STORY_PROMPT
 export interface fieldData{
@@ -28,7 +29,9 @@ export interface formDataType{
   storyType:string,
   imageStyle:string,
   ageGroup:string
+  totalChapters:number
 }
+
 function CreateStory() {
 
   const [formData,setFormData]=useState<formDataType>();
@@ -65,6 +68,7 @@ function CreateStory() {
     .replace('{storyType}',formData?.storyType??'')
     .replace('{storySubject}',formData?.storySubject??'')
     .replace('{imageStyle}',formData?.imageStyle??'')
+    .replace('{totalChapters}',formData?.totalChapters? formData.totalChapters.toString() : '4')
     //Generate AI Story
       try{
         const result=await chatSession.sendMessage(FINAL_PROMPT);
@@ -153,6 +157,8 @@ function CreateStory() {
           <AgeGroup userSelection={onHandleUserSelection}/>
         {/* Image Style  */}
          <ImageStyle userSelection={onHandleUserSelection}/>
+        {/* Total Chapters  */}
+        <TotalChaptersSelect userSelection={onHandleUserSelection} />
       </div>
 
       <div className='flex justify-end my-10 flex-col items-end'>

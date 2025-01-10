@@ -35,7 +35,7 @@ function ExploreMore() {
         lg:grid-cols-3 xl:grid-cols-4 mt-10
         gap-10'>
         {storyList.length>0&&storyList?.map((item,index)=>(
-            <StoryItemCard story={item} />
+            <StoryItemCard key={item.id} story={item} />
         ))}
         </div>
         <div className='text-center mt-10'>

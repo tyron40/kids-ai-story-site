@@ -45,7 +45,7 @@ function StoryType({userSelection}:any) {
        
         '>
             {OptionList.map((item,index)=>(
-                <div className={`relative  grayscale hover:grayscale-0 
+                <div key={index} className={`relative  grayscale hover:grayscale-0 
                 cursor-pointer p-1
                 ${selectedOption==item.label?'grayscale-0 border-2 rounded-3xl border-primary':'grayscale'}
                 `} onClick={()=>onUserSelect(item)}>
