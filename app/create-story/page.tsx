@@ -18,6 +18,7 @@ import { useUser } from '@clerk/nextjs'
 import { UserDetailContext } from '../_context/UserDetailConext'
 import { eq } from 'drizzle-orm'
 import TotalChaptersSelect from './_components/TotalChaptersSelect'
+import ImageInput from './_components/ImageInput'
 
 const CREATE_STORY_PROMPT=process.env.NEXT_PUBLIC_CREATE_STORY_PROMPT
 export interface fieldData{
@@ -26,11 +27,20 @@ export interface fieldData{
 }
 export interface formDataType{
   storySubject:string,
+  storyImage:File,
   storyType:string,
   imageStyle:string,
   ageGroup:string
   totalChapters:number
 }
+
+const toBase64 = (file: File) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+  });
 
 function CreateStory() {
 
@@ -52,6 +62,15 @@ function CreateStory() {
       [data.fieldName]:data.fieldValue
     }));
     console.log(formData)
+  }
+
+  const generateImage = async (prompt: string, image?: string) => {
+    const imageResp = await axios.post('/api/generate-image', {
+      image,
+      prompt 
+    })
+
+    return imageResp?.data?.imageUrl
   }
 
   const GenerateStory=async()=>{
@@ -81,18 +100,34 @@ function CreateStory() {
        
          //Generate Image
 
-        const imageResp=await axios.post('/api/generate-image',{
-          prompt:'Add text with  title:'+story?.story_cover?.title+
-          " in bold text for book cover, "+story?.story_cover?.image_prompt
-        })
-        const AiImageUrl=imageResp?.data?.imageUrl
+        const image = formData?.storyImage
+          ? await toBase64(formData?.storyImage)
+          : null;
+        const prompt = image
+          ? `${formData?.storySubject ?? ''}, ${formData?.imageStyle}`
+          : 'Add text with  title:'+story?.story_cover?.title+
+                " in bold text for book cover, "+story?.story_cover?.image_prompt;
+
+        const AiImageUrl= await generateImage(prompt, image as string)
         
         const imageResult=await axios.post('/api/save-image',{
           url:AiImageUrl
         });
 
         const FirebaseStorageImageUrl=imageResult.data.imageUrl;
-      const resp:any= await SaveInDB(result?.response.text(),FirebaseStorageImageUrl);
+
+        for (let index = 0; index < story.chapters.length; index++) {
+          const chapter = story.chapters[index]
+          if (chapter.image_prompt) {
+            const imageUrl = await generateImage(chapter.image_prompt, image as string)
+            const imageResult = await axios.post('/api/save-image',{
+              url: imageUrl
+            });
+            story.chapters[index].chapter_image = imageResult.data.imageUrl
+          }
+        }
+
+      const resp:any= await SaveInDB(JSON.stringify(story),FirebaseStorageImageUrl);
         notify("Story generated")
        await UpdateUserCredits();
         router?.replace('/view-story/'+resp[0].storyId)
@@ -149,8 +184,12 @@ function CreateStory() {
       <p className='text-2xl text-primary text-center'>Unlock your creativity with AI: Craft stories like never before!Let our AI bring your imagination to life, one story at a time.</p>
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-10 mt-14'>
-        {/* Story Subject  */}
+        <div className='grid grid-cols-2 gap-2'>
+          {/* Story Subject  */}
           <StorySubjectInput userSelection={onHandleUserSelection}/>
+          {/* Image  */}
+          <ImageInput userSelection={onHandleUserSelection}/>
+        </div>
         {/* Story Type  */}
           <StoryType userSelection={onHandleUserSelection}/>
         {/* Age Group  */}

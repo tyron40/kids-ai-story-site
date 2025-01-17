@@ -8,6 +8,7 @@ import BookCoverPage from '../_components/BookCoverPage'
 import StoryPages from '../_components/StoryPages'
 import LastPage from '../_components/LastPage'
 import { IoIosArrowDroprightCircle, IoIosArrowDropleftCircle } from "react-icons/io";
+import { Image } from '@nextui-org/react'
 
 function ViewStory({ params }) {
   const [story, setStory] = useState();
@@ -32,15 +33,29 @@ function ViewStory({ params }) {
   const storyPages = useMemo(() => {
     const totalChapters = story?.output?.chapters?.length
 
+    let pages = []
+
     if (totalChapters > 0) {
-      return [...Array(story?.output?.chapters?.length)].map((_, index) => (
-        <div key={index + 1} className='bg-white p-10 border'>
+      pages = [...Array(totalChapters)].map((_, index) => {
+        const chapter = story?.output.chapters[index]
+
+        const image = chapter.chapter_image ? (
+          <div key={`${index + 1}-img`} className="bg-white p-10 border">
+            {chapter?.chapter_image && (
+              <Image src={chapter?.chapter_image} />
+            )}
+          </div>
+        ) : null;
+
+        const content = <div key={index + 1} className='bg-white p-10 border'>
           <StoryPages storyChapter={story?.output.chapters[index]} />
         </div>
-      ))
+
+        return image ? [image, content] : content
+      })
     }
 
-    return []
+    return pages.flat()
   }, [story])
 
   const bookPages = useMemo(() => {
@@ -74,21 +89,21 @@ function ViewStory({ params }) {
         >
           {bookPages}
         </HTMLFlipBook>
-        {count != 0 && <div className='absolute -left-5 top-[250px]'
+        {count != 0 && <button className='absolute -left-5 top-[250px]'
           onClick={() => {
             bookRef.current.pageFlip().flipPrev();
             setCount(count - 1)
           }}
         >
           <IoIosArrowDropleftCircle className='text-[40px] text-primary cursor-pointer' />
-        </div>}
+        </button>}
 
-        {count != (story?.output.chapters?.length - 1) && <div className='absolute right-0 top-[250px]' onClick={() => {
+        {count != (bookPages.length - 1) && <button className='absolute right-0 top-[250px]' onClick={() => {
           bookRef.current.pageFlip().flipNext();
           setCount(count + 1)
         }}>
           <IoIosArrowDroprightCircle className='text-[40px] text-primary cursor-pointer' />
-        </div>}
+        </button>}
       </div>
     </div>
   )
