@@ -64,6 +64,15 @@ function CreateStory() {
     console.log(formData)
   }
 
+  const generateImage = async (prompt: string, image?: string) => {
+    const imageResp = await axios.post('/api/generate-image', {
+      image,
+      prompt 
+    })
+
+    return imageResp?.data?.imageUrl
+  }
+
   const GenerateStory=async()=>{
 
     if(userDetail.credit<=0)
@@ -99,19 +108,26 @@ function CreateStory() {
           : 'Add text with  title:'+story?.story_cover?.title+
                 " in bold text for book cover, "+story?.story_cover?.image_prompt;
 
-        const imageResp = await axios.post('/api/generate-image', {
-          image,
-          prompt 
-        })
-
-        const AiImageUrl=imageResp?.data?.imageUrl
+        const AiImageUrl= await generateImage(prompt, image as string)
         
         const imageResult=await axios.post('/api/save-image',{
           url:AiImageUrl
         });
 
         const FirebaseStorageImageUrl=imageResult.data.imageUrl;
-      const resp:any= await SaveInDB(result?.response.text(),FirebaseStorageImageUrl);
+
+        for (let index = 0; index < story.chapters.length; index++) {
+          const chapter = story.chapters[index]
+          if (chapter.image_prompt) {
+            const imageUrl = await generateImage(chapter.image_prompt, image as string)
+            const imageResult = await axios.post('/api/save-image',{
+              url: imageUrl
+            });
+            story.chapters[index].chapter_image = imageResult.data.imageUrl
+          }
+        }
+
+      const resp:any= await SaveInDB(JSON.stringify(story),FirebaseStorageImageUrl);
         notify("Story generated")
        await UpdateUserCredits();
         router?.replace('/view-story/'+resp[0].storyId)
