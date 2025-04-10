@@ -2,7 +2,7 @@ import { Chapter } from "@/config/schema"
 
 export interface RegenerateImageParams {
   seedImage?: File | string
-  skinColor?: string | null
+  skinColor?: string | undefined
   imagePrompt?: string
 }
 

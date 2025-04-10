@@ -30,6 +30,7 @@ export default function ViewStory({ params }: { params: PageParams }) {
   const [story, setStory] = useState<StoryItem | null>(null)
   const [skinColor, setSkinColor] = useState<string | undefined>()
   const [selectedCoverInput, setSelectedCoverInput] = useState<File | null>(null)
+  const [isTakePhotoOpen, setIsTakePhotoOpen] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const notify = (msg: string) => toast(msg)
@@ -50,7 +51,9 @@ export default function ViewStory({ params }: { params: PageParams }) {
   }, [initStory])
 
   const onSkinColorChange = useCallback((field: FieldData) => {
-    setSkinColor(field.fieldValue as string)
+    if (typeof field.fieldValue === 'string' || field.fieldValue === null) {
+      setSkinColor(field.fieldValue ?? undefined)
+    }
   }, [])
 
   const regenerateCoverImage = useCallback(
@@ -242,14 +245,21 @@ export default function ViewStory({ params }: { params: PageParams }) {
         <span className="font-bold text-4xl text-primary">Cover image</span>
         <div className="grid grid-cols-2 gap-2">
           <ImageInput
-            userSelection={({ fieldValue }) =>
-              setSelectedCoverInput(fieldValue as File)
-            }
+            userSelection={(field: FieldData) => {
+              if (field.fieldValue instanceof File) {
+                setSelectedCoverInput(field.fieldValue)
+              }
+            }}
           />
           <TakePhoto
-            userSelection={({ fieldValue }) =>
-              setSelectedCoverInput(fieldValue as File)
-            }
+            isOpen={isTakePhotoOpen}
+            onClose={() => setIsTakePhotoOpen(false)}
+            onOpenChange={() => setIsTakePhotoOpen(!isTakePhotoOpen)}
+            onPhotoPick={(image: string, file?: File) => {
+              if (file) {
+                setSelectedCoverInput(file)
+              }
+            }}
           />
         </div>
         <Button
@@ -271,7 +281,7 @@ export default function ViewStory({ params }: { params: PageParams }) {
         <StoryLastPage story={story} />
       </div>,
     ]
-  }, [story, storyPages, regenerateCoverImage, skinColor, selectedCoverInput])
+  }, [story, storyPages, regenerateCoverImage, skinColor, selectedCoverInput, isTakePhotoOpen])
 
   const title = story?.output.story_cover.title ?? ""
 
