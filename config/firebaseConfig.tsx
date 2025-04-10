@@ -1,7 +1,6 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import {getStorage} from "firebase/storage"
+import { initializeApp } from "firebase/app"
+import { getStorage } from "firebase/storage"
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -14,9 +13,9 @@ const firebaseConfig = {
   storageBucket: "ai-kids-story-generator-f167e.firebasestorage.app",
   messagingSenderId: "251077249218",
   appId: "1:251077249218:web:9194a818ac09c43b51135b",
-  measurementId: "G-WJ6EYJJCW2"
-};
+  measurementId: "G-WJ6EYJJCW2",
+}
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const storage=getStorage(app)
+const app = initializeApp(firebaseConfig)
+export const storage = getStorage(app)

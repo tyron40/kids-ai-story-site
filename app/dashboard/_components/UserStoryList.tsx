@@ -1,56 +1,50 @@
 "use client"
-import { db } from '@/config/db'
-import { StoryData } from '@/config/schema'
-import { useUser } from '@clerk/nextjs'
+import CustomLoader from "@/app/_components/CustomLoader"
+import { getUserStories, StoryItem } from "@/app/_utils/db"
+import { useUser } from "@clerk/nextjs"
+import { useCallback, useEffect, useState } from "react"
 
-import { desc, eq } from 'drizzle-orm'
-import React, { useEffect, useState } from 'react'
-import StoryItemCard from './StoryItemCard'
-import CustomLoader from '@/app/create-story/_components/CustomLoader'
+import StoryItemCard from "./StoryItemCard"
+import LinkButton from "@/app/_components/LinkButton"
 
-export type StoryItemType = {
-    id: number,
-    storyType: string,
-    ageGroup: string,
-    coverImage: string,
-    imageStyle: string,
-    userEmail: string,
-    userImage: string,
-    userName: string,
-    output: [] | any,
-    storyId: string,
-    storySubject: string
-}
+export default function UserStoryList() {
+  const { user } = useUser()
+  const [storyList, setStoryList] = useState<StoryItem[]>([])
+  const [loading, setLoading] = useState(false)
 
-function UserStoryList() {
-    const { user } = useUser();
-    const [storyList, setStoryList] = useState<StoryItemType[]>();
-    const [loading, setLoading] = useState(false);
-    useEffect(() => {
-        user && getUserStory();
-    }, [user])
-
-    const getUserStory = async () => {
-        setLoading(true)
-        const result: any = await db.select().from(StoryData)
-            .where(eq(StoryData.userEmail, user?.primaryEmailAddress?.emailAddress ?? ''))
-            .orderBy(desc(StoryData.id))
-        console.log(result);
-        setStoryList(result);
-        setLoading(false)
+  const initData = useCallback(async () => {
+    try {
+      setLoading(true)
+      const result = await getUserStories(
+        user?.primaryEmailAddress?.emailAddress ?? ""
+      )
+      setStoryList(result)
+    } finally {
+      setLoading(false)
     }
+  }, [user?.primaryEmailAddress?.emailAddress])
 
-    return (
-        <div>
-            <div className='grid grid-cols-1 md:grid-cols-2 
-        lg:grid-cols-3 xl:grid-cols-4 gap-10 mt-10'>
-                {storyList && storyList.map((item: StoryItemType, index: number) => (
-                    <StoryItemCard story={item} />
-                ))}
+  useEffect(() => {
+    if (user) {
+      initData()
+    }
+  }, [initData, user])
+
+  return (
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10 mt-10">
+        {storyList.length > 0 &&
+          storyList.map((item: StoryItem) => (
+            <div key={item.id} className="flex flex-col items-center gap-4">
+              <StoryItemCard story={item} />
+              <LinkButton
+                href={`/edit-story/${item.storyId}`}
+                text="Edit Story"
+              />
             </div>
-            <CustomLoader isLoading={loading} />
-        </div>
-    )
+          ))}
+      </div>
+      <CustomLoader isLoading={loading} />
+    </div>
+  )
 }
-
-export default UserStoryList

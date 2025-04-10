@@ -1,67 +1,68 @@
-
 "use client"
-import { NextUIProvider } from '@nextui-org/react'
-import React, { useEffect, useState } from 'react'
-import Header from './_components/Header'
-import { ToastContainer } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css';
-import { db } from '@/config/db'
-import { Users } from '@/config/schema'
-import { eq } from 'drizzle-orm'
-import { useUser } from '@clerk/nextjs';
-import { UserDetailContext } from './_context/UserDetailConext'
-import { PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { NextUIProvider } from "@nextui-org/react"
+import { ReactNode, useCallback, useEffect, useMemo, useState } from "react"
+import Header from "./_components/Header"
+import { ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+import { useUser } from "@clerk/nextjs"
+import { UserDetailContext } from "./_context/UserDetailConext"
+import { PayPalScriptProvider } from "@paypal/react-paypal-js"
+import { createUser, getUser, UserInsertProps } from "./_utils/db"
 
-function Provider({children}:{children: React.ReactNode}) {
+export default function Provider({ children }: { children: ReactNode }) {
+  const [userDetail, setUserDetail] = useState<UserInsertProps | null>(null)
+  const { user } = useUser()
 
-  const [userDetail,setUserDetail]=useState<any>();
-  const {user}=useUser();
+  const saveNewUserIfNotExist = useCallback(async () => {
+    const userEmail = user?.primaryEmailAddress?.emailAddress
 
+    const foundUser = userEmail ? await getUser(userEmail) : null
 
-  useEffect(()=>{
-    user&&saveNewUserIfNotExist();
-  },[user])
+    console.log("ExistingUser", foundUser)
 
-  const saveNewUserIfNotExist=async()=>{
-    // check if user already exist 
-      const userResp=await db.select().from(Users)
-      .where(eq(Users.userEmail,user?.primaryEmailAddress?.emailAddress??''))
-    
-      console.log("ExisitngUser",userResp);
-      // if Not will add new user to db 
-      if(!userResp[0])
-      {
-          const result=await db.insert(Users).values({
-            userEmail:user?.primaryEmailAddress?.emailAddress,
-            userImage:user?.imageUrl,
-            userName:user?.fullName
-          }).returning({
-            userEmail:Users.userEmail,
-            userName:Users.userName,
-            userImage:Users.userImage,
-            credit:Users.credit
-          })
-          console.log("new User",result[0])
-          setUserDetail(result[0]);
-      }else{
-        setUserDetail(userResp[0])
-      }
-   
-  }
+    if (foundUser) {
+      setUserDetail(foundUser)
+      return
+    }
+
+    // if Not will add new user to db
+
+    const result = await createUser(
+      user?.primaryEmailAddress?.emailAddress,
+      user?.imageUrl,
+      user?.fullName
+    )
+
+    console.log("new User", result)
+
+    setUserDetail(result)
+  }, [user?.fullName, user?.imageUrl, user?.primaryEmailAddress?.emailAddress])
+
+  useEffect(() => {
+    if (user) {
+      saveNewUserIfNotExist()
+    }
+  }, [saveNewUserIfNotExist, user])
+
+  const value = useMemo(
+    () => ({
+      userDetail,
+      setUserDetail,
+    }),
+    [userDetail, setUserDetail]
+  )
 
   return (
-   <UserDetailContext.Provider value={{userDetail,setUserDetail}}>
-    <PayPalScriptProvider options={{ clientId:process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID??'' }}>
-    <NextUIProvider>
-       {/* Header  */}
-        <Header/>
-        {children}
-        <ToastContainer />
-    </NextUIProvider>
-    </PayPalScriptProvider>
+    <UserDetailContext.Provider value={value}>
+      <PayPalScriptProvider
+        options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ?? "" }}
+      >
+        <NextUIProvider>
+          <Header />
+          {children}
+          <ToastContainer />
+        </NextUIProvider>
+      </PayPalScriptProvider>
     </UserDetailContext.Provider>
-
   )
 }
-
-export default Provider

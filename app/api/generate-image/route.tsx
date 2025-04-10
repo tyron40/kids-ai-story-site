@@ -1,47 +1,80 @@
-import { storage } from "@/config/firebaseConfig";
-import { getDownloadURL, ref, uploadString } from "firebase/storage";
-import { NextRequest, NextResponse } from "next/server";
-import Replicate from "replicate";
+import { storage } from "@/config/firebaseConfig"
+import axios from "axios"
+import { getDownloadURL, ref, uploadString } from "firebase/storage"
+import { NextRequest, NextResponse } from "next/server"
+import Replicate from "replicate"
+
+async function convertToBase64(imageUrl: string) {
+  const respose = await axios.get(imageUrl, { responseType: "arraybuffer" })
+  return Buffer.from(respose.data).toString("base64")
+}
+
+async function uploadData(filename: string, data: string) {
+  const fileRef = ref(storage, filename)
+  await uploadString(fileRef, data, "data_url")
+  return await getDownloadURL(fileRef)
+}
+
+async function getSeedImageUrl(seedImage: string) {
+  let seedImageUrl: string | null = null
+
+  const isSeedImageUrl = seedImage?.startsWith("https://")
+  if (seedImage && isSeedImageUrl) {
+    seedImageUrl = seedImage
+  }
+
+  const isBase64 = seedImage?.startsWith("data")
+  if (seedImage && isBase64) {
+    const filetype = seedImage.substring(
+      "data:image/".length,
+      seedImage.indexOf(";base64")
+    )
+    const filename = "/ai-story/temp/" + Date.now() + `.${filetype}`
+    seedImageUrl = await uploadData(filename, seedImage)
+  }
+
+  return seedImageUrl
+}
 
 export async function POST(req: NextRequest) {
-  const { image, prompt } = await req.json();
+  const { prompt, seedImage, skinColor } = await req.json()
 
-  let imageUrl: string | null = null;
-
-  if (image) {
-    const filetype = image.substring(
-      "data:image/".length,
-      image.indexOf(";base64")
-    );
-    const filename = "/ai-story/temp/" + Date.now() + `.${filetype}`;
-    const imageRef = ref(storage, filename);
-    await uploadString(imageRef, image as string, "data_url");
-    imageUrl = await getDownloadURL(imageRef);
-  }
+  const seedImageUrl = await getSeedImageUrl(seedImage)
 
   const replicate = new Replicate({
     auth: process.env.REPLICATE_API_KEY,
-  });
+  })
 
-  const input = image
+  const skinColorPrompt = skinColor
+    ? `character with ${skinColor} skin color`
+    : ""
+  const imagePrompt = `${prompt} ${skinColorPrompt}`
+
+  const input = seedImage
     ? {
-        prompt: `${prompt} img`,
+        prompt: `${imagePrompt} img`,
         num_steps: 50,
-        input_image: imageUrl,
-        style_name: '(No style)'
+        input_image: seedImageUrl,
+        style_name: "(No style)",
       }
     : {
-        prompt: prompt,
+        prompt: imagePrompt,
         output_format: "png",
         output_quality: 80,
         aspect_ratio: "1:1",
-      };
+      }
 
-  const model = image
+  const model = seedImage
     ? "tencentarc/photomaker:ddfc2b08d209f9fa8c1eca692712918bd449f695dabb4a958da31802a9570fe4"
-    : "black-forest-labs/flux-schnell";
+    : "black-forest-labs/flux-schnell"
 
-  const output: any = await replicate.run(model, { input });
+  const [generatedImageUrl] = (await replicate.run(model, {
+    input,
+  })) as string[]
 
-  return NextResponse.json({ imageUrl: output[0] });
+  const base64 =
+    "data:image/png;base64," + (await convertToBase64(generatedImageUrl))
+  const imageUrl = await uploadData("/ai-story/" + Date.now() + ".png", base64)
+
+  return NextResponse.json({ imageUrl, seedImageUrl })
 }

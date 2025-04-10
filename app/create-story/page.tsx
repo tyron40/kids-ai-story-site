@@ -1,217 +1,211 @@
 "use client"
-import React, { useContext, useState } from 'react'
-import StorySubjectInput from './_components/StorySubjectInput'
-import StoryType from './_components/StoryType'
-import AgeGroup from './_components/AgeGroup'
-import ImageStyle from './_components/ImageStyle'
-import { Button } from '@nextui-org/button'
-import { chatSession } from '@/config/GeminiAi'
-import { db } from '@/config/db'
-import { StoryData, Users } from '@/config/schema'
-//@ts-ignore
-import uuid4 from "uuid4";
-import CustomLoader from './_components/CustomLoader'
-import axios from 'axios'
-import { useRouter } from 'next/navigation'
-import { toast } from 'react-toastify'
-import { useUser } from '@clerk/nextjs'
-import { UserDetailContext } from '../_context/UserDetailConext'
-import { eq } from 'drizzle-orm'
-import TotalChaptersSelect from './_components/TotalChaptersSelect'
-import ImageInput from './_components/ImageInput'
+import {
+  FormDataType,
+  UserSelectionHandler,
+} from "@/app/_components/story/controls/types"
+import { useUser } from "@clerk/nextjs"
+import { chatSession, GAIStoryData, isStoryData } from "@/config/GeminiAi"
+import { db } from "@/config/db"
+import { Users } from "@/config/schema"
+import { Button } from "@nextui-org/button"
+import { eq } from "drizzle-orm"
+import { useRouter } from "next/navigation"
+import { useContext, useState } from "react"
+import { toast } from "react-toastify"
+import { v4 as uuidv4 } from "uuid"
 
-const CREATE_STORY_PROMPT=process.env.NEXT_PUBLIC_CREATE_STORY_PROMPT
-export interface fieldData{
-  fieldName:string,
-  fieldValue:string
+import CustomLoader from "../_components/CustomLoader"
+import SkinColor from "../_components/story/controls/SkinColor"
+import { UserDetailContext } from "../_context/UserDetailConext"
+import { generateImage } from "../_utils/api"
+import { createStory } from "../_utils/db"
+import { getImageData } from "../_utils/imageUtils"
+import {
+  getBasePrompt,
+  getStoryPrompt,
+  getConsistentPrompt,
+} from "../_utils/storyUtils"
+import AgeGroup from "./_components/AgeGroup"
+import ImageInput from "./_components/ImageInput"
+import ImageStyle from "./_components/ImageStyle"
+import StorySubjectInput from "./_components/StorySubjectInput"
+import StoryType from "./_components/StoryType"
+import TotalChaptersSelect from "./_components/TotalChaptersSelect"
+
+const defaultFormData: FormDataType = {
+  storySubject: "",
+  storyType: "",
+  imageStyle: "",
+  ageGroup: "",
+  skinColor: null,
+  totalChapters: 5,
+  seedImage: null,
 }
-export interface formDataType{
-  storySubject:string,
-  storyImage:File,
-  storyType:string,
-  imageStyle:string,
-  ageGroup:string
-  totalChapters:number
-}
 
-const toBase64 = (file: File) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-  });
+export default function CreateStory() {
+  const router = useRouter()
+  const { user } = useUser()
+  const { userDetail } = useContext(UserDetailContext)
+  const [formData, setFormData] = useState(defaultFormData)
+  const [loading, setLoading] = useState(false)
 
-function CreateStory() {
+  const notify = (msg: string) => toast(msg)
+  const notifyError = (msg: string) => toast.error(msg)
 
-  const [formData,setFormData]=useState<formDataType>();
-  const [loading,setLoading]=useState(false);
-  const router=useRouter();
-  const notify = (msg:string) => toast(msg);
-  const notifyError = (msg:string) => toast.error(msg);
-  const {user}=useUser();
-  const {userDetail,setUserDetail}=useContext(UserDetailContext);
-
-  /**
-   * used to add data to form
-   * @param data 
-   */
-  const onHandleUserSelection=(data:fieldData)=>{
-    setFormData((prev:any)=>({
+  const onHandleUserSelection: UserSelectionHandler = (data) => {
+    setFormData((prev) => ({
       ...prev,
-      [data.fieldName]:data.fieldValue
-    }));
-    console.log(formData)
+      [data.fieldName]: data.fieldValue,
+    }))
   }
 
-  const generateImage = async (prompt: string, image?: string) => {
-    const imageResp = await axios.post('/api/generate-image', {
-      image,
-      prompt 
+  const saveStory = async (output: GAIStoryData, imageUrl: string) => {
+    const recordId = uuidv4()
+    return createStory({
+      storyId: recordId,
+      ageGroup: formData.ageGroup,
+      imageStyle: formData.imageStyle,
+      skinColor: formData.skinColor,
+      storySubject: formData.storySubject,
+      storyType: formData.storyType,
+      output,
+      coverImage: imageUrl,
+      userEmail: user?.primaryEmailAddress?.emailAddress ?? "",
+      userImage: user?.imageUrl ?? null,
+      userName: user?.username ?? null,
     })
-
-    return imageResp?.data?.imageUrl
   }
 
-  const GenerateStory=async()=>{
-
-    if(userDetail.credit<=0)
-      {
-        notifyError('You dont have enough credits!');
-        return ;
-      }
-
-    setLoading(true)
-    const FINAL_PROMPT=CREATE_STORY_PROMPT
-    ?.replace('{ageGroup}',formData?.ageGroup??'')
-    .replace('{storyType}',formData?.storyType??'')
-    .replace('{storySubject}',formData?.storySubject??'')
-    .replace('{imageStyle}',formData?.imageStyle??'')
-    .replace('{totalChapters}',formData?.totalChapters? formData.totalChapters.toString() : '4')
-    //Generate AI Story
-      try{
-        const result=await chatSession.sendMessage(FINAL_PROMPT);
-        const story=JSON.parse(result?.response.text().replace(/(})(,?)(\n *\})/g, "$1,"));
-       
-        // const jsonString=result?.response.text().replace(/":\s*"(.*?)"/g, '": "$1",')   // Adds comma after string values
-        // .replace(/":\s*(\d+)(?=\s*)/g, '": $1,') // Adds comma after numeric values
-        // .replace(/,\s*}/g, ' }'); // Removes the last comma before closing brace
-       // const story=JSON.parse(jsonString)
-       
-         //Generate Image
-
-        const image = formData?.storyImage
-          ? await toBase64(formData?.storyImage)
-          : null;
-        const prompt = image
-          ? `${formData?.storySubject ?? ''}, ${formData?.imageStyle}`
-          : 'Add text with  title:'+story?.story_cover?.title+
-                " in bold text for book cover, "+story?.story_cover?.image_prompt;
-
-        const AiImageUrl= await generateImage(prompt, image as string)
-        
-        const imageResult=await axios.post('/api/save-image',{
-          url:AiImageUrl
-        });
-
-        const FirebaseStorageImageUrl=imageResult.data.imageUrl;
-
-        for (let index = 0; index < story.chapters.length; index++) {
-          const chapter = story.chapters[index]
-          if (chapter.image_prompt) {
-            const imageUrl = await generateImage(chapter.image_prompt, image as string)
-            const imageResult = await axios.post('/api/save-image',{
-              url: imageUrl
-            });
-            story.chapters[index].chapter_image = imageResult.data.imageUrl
-          }
-        }
-
-      const resp:any= await SaveInDB(JSON.stringify(story),FirebaseStorageImageUrl);
-        notify("Story generated")
-       await UpdateUserCredits();
-        router?.replace('/view-story/'+resp[0].storyId)
-        setLoading(false);
-      }catch(e){
-        console.log(e)
-        notifyError('Server Error, Try again')
-        setLoading(false);
-      }
-    
+  const updateUserCredits = async () => {
+    await db
+      .update(Users)
+      .set({
+        credit: Number(userDetail!.credit! - 1),
+      })
+      .where(eq(Users.userEmail, user?.primaryEmailAddress?.emailAddress ?? ""))
+      .returning({ id: Users.id })
   }
 
-  /**
-   * Save Data in Database
-   * @param output AI Output
-   * @returns 
-   */
-  const SaveInDB=async(output:string,imageUrl:string)=>{
-    const recordId=uuid4();
-    setLoading(true)
-    try{
-      const result=await db.insert(StoryData).values({
-          storyId:recordId,
-          ageGroup:formData?.ageGroup,
-          imageStyle:formData?.imageStyle,
-          storySubject:formData?.storySubject,
-          storyType:formData?.storyType,
-          output:JSON.parse(output),
-          coverImage:imageUrl,
-          userEmail:user?.primaryEmailAddress?.emailAddress,
-          userImage:user?.imageUrl,
-          userName:user?.fullName
-      }).returning({storyId:StoryData?.storyId})
-      setLoading(false);
-      return result;
+  const onGenerateStoryData = async () => {
+    const storyPrompt = getStoryPrompt(formData)
+    const result = await chatSession.sendMessage(storyPrompt)
+
+    const story = JSON.parse(
+      result?.response.text().replace(/(})(,?)(\n *\})/g, "$1,")
+    )
+
+    if (!isStoryData(story)) {
+      throw new Error("Generated data is invalid")
     }
-    catch(e)
-    {
-        setLoading(false);
-    } 
+
+    return story
   }
 
+  const onGenerateStory = async () => {
+    if (userDetail!.credit! <= 0) {
+      notifyError("You don’t have enough credits!")
+      return
+    }
 
-  const UpdateUserCredits=async()=>{
-    const result=await db.update(Users).set({
-      credit:Number(userDetail?.credit-1)
-    }).where(eq(Users.userEmail,user?.primaryEmailAddress?.emailAddress??''))
-    .returning({id:Users.id})
+    try {
+      setLoading(true)
+
+      const story = await onGenerateStoryData()
+
+      const seedImage =
+        formData.seedImage !== null
+          ? await getImageData(formData.seedImage)
+          : null
+
+      const coverImagePromptParts = seedImage
+        ? [formData.storySubject, formData.imageStyle]
+        : [
+            getBasePrompt(
+              story.story_cover.title,
+              story.story_cover.image_prompt
+            ),
+          ]
+
+      const coverImagePrompt = coverImagePromptParts
+        .filter((x) => !!x)
+        .join(", ")
+
+      const {
+        imageUrl: coverImageUrl,
+        seedImageUrl,
+      } = await generateImage({
+        prompt: coverImagePrompt,
+        seedImage,
+        skinColor: formData.skinColor,
+      })
+
+      // 🔁 Generate chapter images with consistent character
+      for (let index = 0; index < story.chapters.length; index++) {
+        const chapter = story.chapters[index]
+        if (chapter.image_prompt) {
+          const prompt = getConsistentPrompt(chapter.image_prompt)
+          const { imageUrl } = await generateImage({
+            prompt,
+            seedImage: seedImageUrl,
+            skinColor: formData.skinColor,
+          })
+          story.chapters[index].chapter_image = imageUrl
+        }
+      }
+
+      const [created] = await saveStory(
+        {
+          ...story,
+          seedImageUrl,
+        },
+        coverImageUrl
+      )
+
+      notify("Story generated")
+      await updateUserCredits()
+      router.replace("/view-story/" + created.storyId)
+    } catch (e) {
+      console.error(e)
+      notifyError("Something went wrong, please try again!")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className='p-10 md:px-20 lg:px-40'>
-      <h2 className='font-extrabold text-[70px] text-primary text-center'>CREATE YOUR STORY</h2>
-      <p className='text-2xl text-primary text-center'>Unlock your creativity with AI: Craft stories like never before!Let our AI bring your imagination to life, one story at a time.</p>
+    <div className="p-10 md:px-20 lg:px-40">
+      <h2 className="font-extrabold text-[70px] text-primary text-center">
+        CREATE YOUR STORY
+      </h2>
+      <p className="text-2xl text-primary text-center">
+        Unlock your creativity with AI: Craft stories like never before! Let
+        our AI bring your imagination to life, one story at a time.
+      </p>
 
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-10 mt-14'>
-        <div className='grid grid-cols-2 gap-2'>
-          {/* Story Subject  */}
-          <StorySubjectInput userSelection={onHandleUserSelection}/>
-          {/* Image  */}
-          <ImageInput userSelection={onHandleUserSelection}/>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-14 max-w-screen-2xl justify-self-center">
+        <div className="grid grid-cols-2 gap-2">
+          <StorySubjectInput userSelection={onHandleUserSelection} />
+          <ImageInput userSelection={onHandleUserSelection} />
         </div>
-        {/* Story Type  */}
-          <StoryType userSelection={onHandleUserSelection}/>
-        {/* Age Group  */}
-          <AgeGroup userSelection={onHandleUserSelection}/>
-        {/* Image Style  */}
-         <ImageStyle userSelection={onHandleUserSelection}/>
-        {/* Total Chapters  */}
+        <SkinColor userSelection={onHandleUserSelection} />
+        <StoryType userSelection={onHandleUserSelection} />
+        <AgeGroup userSelection={onHandleUserSelection} />
+        <ImageStyle userSelection={onHandleUserSelection} />
         <TotalChaptersSelect userSelection={onHandleUserSelection} />
       </div>
 
-      <div className='flex justify-end my-10 flex-col items-end'>
-        <Button color='primary' 
-        disabled={loading}
-        className='p-10 text-2xl'
-        onClick={GenerateStory}>
-          Generate Story</Button>
-          <span>1 Credit will user</span>
+      <div className="flex justify-end my-10 flex-col items-end">
+        <Button
+          color="primary"
+          disabled={loading}
+          className="p-8 text-2xl"
+          onPress={onGenerateStory}
+        >
+          Generate Story
+        </Button>
+        <span className="mt-2">1 Credit will be used</span>
       </div>
-      <CustomLoader isLoading={loading}/>
-
+      <CustomLoader isLoading={loading} />
     </div>
   )
 }
-
-export default CreateStory
