@@ -1,9 +1,10 @@
 import { UserSelectionHandler } from "@/app/_components/story/controls/types"
 import { Input } from "@nextui-org/input"
 import { Button, Image, useDisclosure } from "@nextui-org/react"
-import { ChangeEventHandler, useRef, useState } from "react"
+import { ChangeEventHandler, useEffect, useRef, useState } from "react"
 import { analyzeFace } from "@/app/_utils/faceapi"
 import TakePhoto from "./TakePhoto"
+import axios from "axios"
 
 export default function ImageInput({
   userSelection,
@@ -13,6 +14,7 @@ export default function ImageInput({
   const [image, setImage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [jobId, setJobId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [faceDetails, setFaceDetails] = useState<null | {
     age: number
@@ -62,18 +64,34 @@ export default function ImageInput({
         if (normalized) {
           setFaceDetails(normalized)
           console.log("📸 Face scan:", normalized)
-        } else {
-          console.warn("No face detected.")
         }
       } catch (err) {
         console.error("Face analysis failed:", err)
         // Continue even if face analysis fails
       }
 
-      userSelection({
-        fieldName: "seedImage",
-        fieldValue: file,
-      })
+      // Convert file to base64 for API request
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        try {
+          const response = await axios.post('/api/generate-image', {
+            prompt: "Generate an image based on the uploaded photo",
+            seedImage: reader.result,
+            skinColor: null,
+          })
+
+          setJobId(response.data.jobId)
+          userSelection({
+            fieldName: "seedImage",
+            fieldValue: file,
+          })
+        } catch (err) {
+          setError("Failed to start image generation")
+          console.error("API request failed:", err)
+        }
+      }
+      reader.readAsDataURL(file)
+
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to process image")
       setImage(null)
@@ -109,6 +127,7 @@ export default function ImageInput({
     setImage(null)
     setFaceDetails(null)
     setError(null)
+    setJobId(null)
     if (inputRef.current) {
       inputRef.current.value = ''
     }
@@ -117,6 +136,45 @@ export default function ImageInput({
       fieldValue: null,
     })
   }
+
+  useEffect(() => {
+    let mounted = true
+    const pollJobStatus = async () => {
+      if (!jobId) return
+
+      try {
+        const response = await axios.get(`/api/generate-image?jobId=${jobId}`)
+        const { status, result } = response.data
+
+        if (!mounted) return
+
+        if (status === "completed" && result) {
+          setImage(result)
+          setJobId(null) // Reset job ID after completion
+          userSelection({
+            fieldName: "seedImage",
+            fieldValue: result,
+          })
+        } else if (status === "not found") {
+          setError("Image generation failed. Please try again.")
+          setJobId(null)
+        }
+      } catch (err) {
+        console.error("Error fetching job status:", err)
+        if (mounted) {
+          setError("Failed to check image generation status")
+          setJobId(null)
+        }
+      }
+    }
+
+    const interval = setInterval(pollJobStatus, 3000) // Poll every 3 seconds
+
+    return () => {
+      mounted = false
+      clearInterval(interval)
+    }
+  }, [jobId, userSelection])
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -136,10 +194,10 @@ export default function ImageInput({
             size="lg"
             className="w-full"
             onChange={onFilePick}
-            isDisabled={loading}
+            isDisabled={loading || !!jobId}
             description="Max file size: 5MB"
           />
-          {loading && (
+          {(loading || jobId) && (
             <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
               <div className="loading-spinner" />
             </div>
@@ -150,7 +208,7 @@ export default function ImageInput({
           color="primary" 
           onPress={onTakePhotoOpen} 
           className="w-full"
-          isDisabled={loading}
+          isDisabled={loading || !!jobId}
         >
           Take Photo
         </Button>
@@ -158,6 +216,12 @@ export default function ImageInput({
         {error && (
           <div className="text-danger text-sm p-2 bg-danger-50 rounded-lg">
             {error}
+          </div>
+        )}
+
+        {jobId && (
+          <div className="text-primary text-sm p-2 bg-primary-50 rounded-lg">
+            Generating image... Please wait.
           </div>
         )}
 
@@ -175,6 +239,7 @@ export default function ImageInput({
                 onPress={onFileRemove}
                 className="absolute top-2 right-2 min-w-0 w-8 h-8 p-0"
                 isIconOnly
+                isDisabled={!!jobId}
               >
                 ✕
               </Button>

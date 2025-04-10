@@ -4,9 +4,11 @@ import { getDownloadURL, ref, uploadString } from "firebase/storage"
 import { NextRequest, NextResponse } from "next/server"
 import Replicate from "replicate"
 
+const jobQueue: { id: string; prompt: string; seedImage: string; skinColor: string; status: string; result?: string }[] = []
+
 async function convertToBase64(imageUrl: string) {
-  const respose = await axios.get(imageUrl, { responseType: "arraybuffer" })
-  return Buffer.from(respose.data).toString("base64")
+  const response = await axios.get(imageUrl, { responseType: "arraybuffer" })
+  return Buffer.from(response.data).toString("base64")
 }
 
 async function uploadData(filename: string, data: string) {
@@ -36,9 +38,8 @@ async function getSeedImageUrl(seedImage: string) {
   return seedImageUrl
 }
 
-export async function POST(req: NextRequest) {
-  const { prompt, seedImage, skinColor } = await req.json()
-
+async function processJob(job: { id: string; prompt: string; seedImage: string; skinColor: string }) {
+  const { prompt, seedImage, skinColor, id } = job
   const seedImageUrl = await getSeedImageUrl(seedImage)
 
   const replicate = new Replicate({
@@ -76,5 +77,38 @@ export async function POST(req: NextRequest) {
     "data:image/png;base64," + (await convertToBase64(generatedImageUrl))
   const imageUrl = await uploadData("/ai-story/" + Date.now() + ".png", base64)
 
-  return NextResponse.json({ imageUrl, seedImageUrl })
+  // Update job status
+  const jobIndex = jobQueue.findIndex(j => j.id === id)
+  if (jobIndex !== -1) {
+    jobQueue[jobIndex].status = "completed"
+    jobQueue[jobIndex].result = imageUrl
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const { prompt, seedImage, skinColor } = await req.json()
+  const jobId = Date.now().toString() // Simple job ID based on timestamp
+
+  // Add job to queue
+  jobQueue.push({ id: jobId, prompt, seedImage, skinColor, status: "pending" })
+
+  // Process the job in the background
+  processJob({ id: jobId, prompt, seedImage, skinColor })
+
+  return NextResponse.json({ jobId, status: "pending" })
+}
+
+export async function GET(req: NextRequest) {
+  const jobId = req.nextUrl.searchParams.get('jobId')
+  if (!jobId) {
+    return NextResponse.json({ error: "Job ID is required" }, { status: 400 })
+  }
+  
+  const job = jobQueue.find(j => j.id === jobId)
+
+  if (job) {
+    return NextResponse.json({ status: job.status, result: job.result || null })
+  } else {
+    return NextResponse.json({ status: "not found" }, { status: 404 })
+  }
 }
