@@ -35,19 +35,19 @@ export default function ViewStory({ params }: { params: PageParams }) {
   const notify = (msg: string) => toast(msg)
   const notifyError = (msg: string) => toast.error(msg)
 
-  const initStory = async () => {
+  const initStory = useCallback(async () => {
     try {
       setLoading(true)
-      const story = await getStory(params.id)
-      setStory(story)
+      const storyData = await getStory(params.id)
+      setStory(storyData)
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])
 
   useEffect(() => {
     initStory()
-  }, [])
+  }, [initStory])
 
   const onSkinColorChange = useCallback((field: FieldData) => {
     setSkinColor(field.fieldValue as string)
@@ -115,17 +115,16 @@ export default function ViewStory({ params }: { params: PageParams }) {
           ? await getImageData(seedImage)
           : story.output.seedImageUrl
 
-          const resolvedSkinColor =
+        const resolvedSkinColor: string | undefined =
           (skinColor ?? story.output.chapters[chapterIndex]?.skin_color ?? story.skinColor) ?? undefined
-        
 
         const basePrompt = imagePrompt ?? chapter.image_prompt ?? ""
-        const prompt = getConsistentPrompt(basePrompt, resolvedSkinColor ?? undefined)
+        const prompt = getConsistentPrompt(basePrompt, resolvedSkinColor)
 
         const { imageUrl } = await generateImage({
           prompt,
           seedImage: processedSeed,
-          skinColor: resolvedSkinColor ?? undefined,
+          skinColor: resolvedSkinColor,
         })
 
         story.output.chapters[chapterIndex] = {
