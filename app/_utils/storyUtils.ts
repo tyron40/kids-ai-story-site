@@ -15,7 +15,7 @@ export function getStoryPrompt(params: StoryPromptParams) {
     .replace("{storyType}", params.storyType || "adventure")
     .replace("{storySubject}", params.storySubject || "a brave child")
     .replace("{imageStyle}", params.imageStyle || "paper cut illustration")
-    .replace("{totalChapters}", params.totalChapters.toString() || "5")
+    .replace("{totalChapters}", params.totalChapters?.toString() || "5")
 }
 
 interface StoryCoverImagePromptParams {
@@ -29,13 +29,13 @@ export function getStoryCoverImagePrompt({
   gaiStory,
   seedImage,
 }: StoryCoverImagePromptParams) {
-  // Default to base prompt with title and original image_prompt
+  // Default: based on AI-generated image prompt
   let prompt = getBasePrompt(
     gaiStory.story_cover.title,
     gaiStory.story_cover.image_prompt
   )
 
-  // If user uploads/takes photo (seedImage), prioritize subject + style
+  // Override with uploaded/taken image preference
   if (seedImage) {
     prompt = `${story.storySubject || "child"}, ${story.imageStyle || "paper cut illustration"}`
   }
@@ -44,13 +44,11 @@ export function getStoryCoverImagePrompt({
 }
 
 export function getBasePrompt(title: string, imagePrompt: string) {
-  return `Add bold title text: "${title}" for a children's book cover, ${imagePrompt}`
+  return `Add bold title text: "${title}" for a children's book cover. ${imagePrompt}`
 }
 
 export function getConsistentPrompt(basePrompt: string, skinColor?: string): string {
-  const skinTone = skinColor ? `${skinColor} skin, ` : ""
-  const anchor =
-    `same child as the cover image, ${skinTone}` +
-    `same facial features, same hairstyle, same clothes, `
+  const skin = skinColor ? `${skinColor} skin, ` : ""
+  const anchor = `same child from the cover image, ${skin}same facial features, hairstyle, and clothing. `
   return `${anchor}${basePrompt}`
 }

@@ -121,12 +121,12 @@ export default function ViewStory({ params }: { params: PageParams }) {
           story.skinColor
 
         const basePrompt = imagePrompt ?? chapter.image_prompt ?? ""
-        const prompt = getConsistentPrompt(basePrompt, resolvedSkinColor)
+        const prompt = getConsistentPrompt(basePrompt, resolvedSkinColor ?? undefined)
 
         const { imageUrl } = await generateImage({
           prompt,
           seedImage: processedSeed,
-          skinColor: resolvedSkinColor,
+          skinColor: resolvedSkinColor ?? undefined,
         })
 
         story.output.chapters[chapterIndex] = {
