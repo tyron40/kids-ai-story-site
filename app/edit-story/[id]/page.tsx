@@ -7,20 +7,20 @@ import { FieldData } from "@/app/_components/story/controls/types"
 import { generateImage } from "@/app/_utils/api"
 import { getStory, StoryItem, updateStory } from "@/app/_utils/db"
 import { getImageData } from "@/app/_utils/imageUtils"
-import {
-  getStoryCoverImagePrompt,
-  getConsistentPrompt,
-} from "@/app/_utils/storyUtils"
+import { getStoryCoverImagePrompt } from "@/app/_utils/storyUtils"
 import { chapterNewTextPrompt, chapterSession } from "@/config/GeminiAi"
 import { Chapter } from "@/config/schema"
-import { Divider, Button } from "@nextui-org/react"
+import { Divider } from "@nextui-org/react"
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "react-toastify"
 
 import ChapterEditor from "./_components/ChapterEditor"
+import CoverImageEditor from "./_components/CoverImageEditor"
 import ImageEditorControl from "./_components/ImageEditorControl"
-import TakePhoto from "@/app/create-story/_components/TakePhoto"
-import ImageInput from "@/app/create-story/_components/ImageInput"
+import {
+  RegenerateChapterImageParams,
+  RegenerateImageParams,
+} from "./_components/types"
 
 interface PageParams {
   id: string
@@ -28,68 +28,68 @@ interface PageParams {
 
 export default function ViewStory({ params }: { params: PageParams }) {
   const [story, setStory] = useState<StoryItem | null>(null)
-  const [skinColor, setSkinColor] = useState<string | undefined>()
-  const [selectedCoverInput, setSelectedCoverInput] = useState<File | null>(null)
-  const [isTakePhotoOpen, setIsTakePhotoOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
 
+  const [skinColor, setSkinColor] = useState<string | undefined>()
+
+  const [loading, setLoading] = useState(true)
   const notify = (msg: string) => toast(msg)
   const notifyError = (msg: string) => toast.error(msg)
 
-  const initStory = useCallback(async () => {
+  const initStory = async () => {
     try {
       setLoading(true)
-      const storyData = await getStory(params.id)
-      setStory(storyData)
+      const story = await getStory(params.id)
+      setStory(story)
     } finally {
       setLoading(false)
     }
-  }, [params.id])
+  }
 
   useEffect(() => {
     initStory()
-  }, [initStory])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const onSkinColorChange = useCallback((field: FieldData) => {
-    if (typeof field.fieldValue === 'string' || field.fieldValue === null) {
-      setSkinColor(field.fieldValue ?? undefined)
-    }
+    setSkinColor(field.fieldValue as string)
   }, [])
 
   const regenerateCoverImage = useCallback(
-    async ({ seedImage, skinColor }: { seedImage?: File | string; skinColor?: string }) => {
-      if (!story) return
+    async ({ seedImage, skinColor, imagePrompt }: RegenerateImageParams) => {
+      if (!story) {
+        return
+      }
 
       try {
-        const processedSeed =
-          seedImage ? await getImageData(seedImage) : story.output.seedImageUrl
+        if (seedImage) {
+          seedImage = await getImageData(seedImage)
+        }
 
-        const prompt = getStoryCoverImagePrompt({
-          story,
-          gaiStory: story.output,
-          seedImage: processedSeed,
-        })
+        const prompt =
+          imagePrompt ??
+          getStoryCoverImagePrompt({
+            story,
+            gaiStory: story.output,
+            seedImage: story.output.seedImageUrl,
+          })
 
-        const { imageUrl, seedImageUrl } = await generateImage({
+        const { imageUrl } = await generateImage({
           prompt,
-          seedImage: processedSeed,
+          seedImage: seedImage ?? story.output.seedImageUrl,
           skinColor,
         })
 
         story.coverImage = imageUrl
-        story.output.seedImageUrl = seedImageUrl
 
-        setStory({ ...story })
-        await updateStory(story.id, {
-          output: story.output,
-          coverImage: imageUrl,
-          skinColor,
+        setStory({
+          ...story,
         })
+        await updateStory(story.id, { coverImage: imageUrl })
 
-        notify("Cover image regenerated!")
+        notify("Cover image regenerated successfully!")
       } catch (e) {
         console.error(e)
-        notifyError("Failed to regenerate cover image")
+        notifyError("Failed to regenerate cover image, please try again.")
       }
     },
     [story]
@@ -101,48 +101,49 @@ export default function ViewStory({ params }: { params: PageParams }) {
       seedImage,
       skinColor,
       imagePrompt,
-    }: {
-      chapter: Chapter
-      seedImage?: File | string
-      skinColor?: string
-      imagePrompt?: string
-    }) => {
-      if (!story) return
+    }: RegenerateChapterImageParams) => {
+      if (!story) {
+        return
+      }
 
       try {
         const chapterIndex = story.output.chapters.findIndex(
           (x) => x.chapter_title === chapter.chapter_title
         )
 
-        const processedSeed = seedImage
-          ? await getImageData(seedImage)
-          : story.output.seedImageUrl
+        if (seedImage) {
+          seedImage = await getImageData(seedImage)
+        }
 
-        const resolvedSkinColor: string | undefined =
-          (skinColor ?? story.output.chapters[chapterIndex]?.skin_color ?? story.skinColor) ?? undefined
-
-        const basePrompt = imagePrompt ?? chapter.image_prompt ?? ""
-        const prompt = getConsistentPrompt(basePrompt, resolvedSkinColor)
+        const prompt = imagePrompt ?? chapter.image_prompt
+        skinColor =
+          skinColor ??
+          story.output.chapters[chapterIndex].skin_color ??
+          story.skinColor
 
         const { imageUrl } = await generateImage({
           prompt,
-          seedImage: processedSeed,
-          skinColor: resolvedSkinColor,
+          seedImage: seedImage ?? story.output.seedImageUrl,
+          skinColor,
         })
 
         story.output.chapters[chapterIndex] = {
           ...story.output.chapters[chapterIndex],
           chapter_image: imageUrl,
           image_prompt: prompt,
-          skin_color: resolvedSkinColor,
+          skin_color: skinColor,
         }
 
-        setStory({ ...story })
+        setStory({
+          ...story,
+        })
+
         await updateStory(story.id, { output: story.output })
-        notify("Chapter image updated!")
+
+        notify("Chapter image regenerated successfully!")
       } catch (e) {
         console.error(e)
-        notifyError("Failed to regenerate chapter image")
+        notifyError("Failed to regenerate chapter image, please try again.")
       }
     },
     [story]
@@ -150,7 +151,9 @@ export default function ViewStory({ params }: { params: PageParams }) {
 
   const regenerateChapterText = useCallback(
     async (chapter: Chapter) => {
-      if (!story) return
+      if (!story) {
+        return
+      }
 
       try {
         const chapterIndex = story.output.chapters.findIndex(
@@ -174,20 +177,86 @@ export default function ViewStory({ params }: { params: PageParams }) {
           chapter_text: output.text,
         }
 
-        setStory({ ...story })
+        setStory({
+          ...story,
+        })
+
         await updateStory(story.id, { output: story.output })
-        notify("Chapter text updated!")
+
+        notify("Chapter text regenerated successfully!")
       } catch (e) {
         console.error(e)
-        notifyError("Failed to regenerate text")
+        notifyError("Failed to regenerate chapter text, please try again.")
       }
     },
     [story]
   )
 
+  const regenerateAllImages = useCallback(
+    async (seedImage?: File | string) => {
+      if (!story) {
+        return
+      }
+
+      try {
+        setLoading(true)
+
+        if (seedImage) {
+          seedImage = await getImageData(seedImage)
+        }
+
+        const prompt = getStoryCoverImagePrompt({
+          story,
+          gaiStory: story.output,
+          seedImage: seedImage ?? story.output.seedImageUrl,
+        })
+
+        const { imageUrl: coverImageUrl, seedImageUrl } = await generateImage({
+          prompt,
+          seedImage: seedImage ?? story.output.seedImageUrl,
+          skinColor,
+        })
+
+        story.coverImage = coverImageUrl
+        story.output.seedImageUrl = seedImageUrl
+
+        // generate chapter images
+        for (let index = 0; index < story.output.chapters.length; index++) {
+          const chapter = story.output.chapters[index]
+          if (chapter.image_prompt) {
+            const { imageUrl } = await generateImage({
+              prompt: chapter.image_prompt,
+              seedImage: seedImageUrl,
+              skinColor,
+            })
+            story.output.chapters[index].chapter_image = imageUrl
+          }
+        }
+
+        await updateStory(story.id, {
+          output: story.output,
+          coverImage: coverImageUrl,
+          skinColor,
+        })
+
+        setStory({ ...story })
+
+        notify("Images regenerated successfully!")
+      } catch (e) {
+        console.error(e)
+        notifyError("Failed to regenerate images, please try again.")
+      } finally {
+        setLoading(false)
+      }
+    },
+    [story, skinColor]
+  )
+
   const saveChapterTextChanges = useCallback(
     async (chapter: Chapter, text: string) => {
-      if (!story) return
+      if (!story) {
+        return
+      }
 
       try {
         const chapterIndex = story.output.chapters.findIndex(
@@ -199,89 +268,102 @@ export default function ViewStory({ params }: { params: PageParams }) {
           chapter_text: text,
         }
 
-        setStory({ ...story })
+        setStory({
+          ...story,
+        })
+
         await updateStory(story.id, { output: story.output })
-        notify("Chapter text saved")
+
+        notify("Chapter text saved successfully!")
       } catch (e) {
         console.error(e)
-        notifyError("Failed to save text")
+        notifyError("Failed to save chapter text, please try again.")
       }
     },
     [story]
   )
 
   const storyPages = useMemo(() => {
-    if (!story) return []
+    if (!story) {
+      return []
+    }
 
-    return story.output.chapters.map((chapter, index) => (
-      <div
-        key={`chapter-${index + 1}`}
-        className="flex flex-col gap-2 bg-white p-4 max-w-screen-md"
-      >
-        <span className="font-bold text-4xl text-primary">Chapter {index + 1}</span>
-        <ChapterEditor
-          story={story}
-          chapter={chapter}
-          regenerateImage={regenerateChapterImage}
-        />
-        <Divider />
-        <StoryPages
-          storyId={story.id}
-          chapter={chapter}
-          chapterNumber={index}
-          isEditable
-          regenerateText={regenerateChapterText}
-          saveTextChanges={saveChapterTextChanges}
-        />
-      </div>
-    ))
-  }, [story, regenerateChapterImage, regenerateChapterText, saveChapterTextChanges])
+    const totalChapters = story.output.chapters.length
+
+    let pages: (React.JSX.Element | React.JSX.Element[])[] = []
+
+    if (totalChapters > 0) {
+      pages = [...Array(totalChapters)].map((_, index) => {
+        const chapter = story.output.chapters[index]
+        return (
+          <div
+            key={`chapter-${index + 1}-img`}
+            className="flex flex-col gap-2 bg-white p-4 max-w-screen-md"
+          >
+            <span className="font-bold text-4xl text-primary">
+              Chapter {index + 1}
+            </span>
+            <ChapterEditor
+              story={story}
+              chapter={chapter}
+              regenerateImage={regenerateChapterImage}
+            />
+            <Divider />
+            <StoryPages
+              storyId={story.id}
+              chapter={chapter}
+              chapterNumber={index}
+              isEditable
+              regenerateText={regenerateChapterText}
+              saveTextChanges={saveChapterTextChanges}
+            />
+          </div>
+        )
+      })
+    }
+
+    return pages
+  }, [
+    story,
+    regenerateChapterImage,
+    regenerateChapterText,
+    saveChapterTextChanges,
+  ])
 
   const bookPages = useMemo(() => {
-    if (!story) return []
+    if (!story) {
+      return []
+    }
 
-    return [
-      <div key={0} className="flex flex-col gap-2 bg-white p-4 max-w-screen-md">
-        <span className="font-bold text-4xl text-primary">Cover image</span>
-        <div className="grid grid-cols-2 gap-2">
-          <ImageInput
-            userSelection={(field: FieldData) => {
-              if (field.fieldValue instanceof File) {
-                setSelectedCoverInput(field.fieldValue)
-              }
-            }}
-          />
-          <TakePhoto
-            isOpen={isTakePhotoOpen}
-            onClose={() => setIsTakePhotoOpen(false)}
-            onOpenChange={() => setIsTakePhotoOpen(!isTakePhotoOpen)}
-            onPhotoPick={(image: string, file?: File) => {
-              if (file) {
-                setSelectedCoverInput(file)
-              }
-            }}
-          />
-        </div>
-        <Button
-          className="mt-2 w-fit"
-          color="primary"
-          onClick={() =>
-            regenerateCoverImage({
-              seedImage: selectedCoverInput!,
-              skinColor,
-            })
-          }
-          isDisabled={!selectedCoverInput}
+    const totalChapters = story.output.chapters.length
+    const prompt = getStoryCoverImagePrompt({
+      story,
+      gaiStory: story.output,
+      seedImage: story.output.seedImageUrl,
+    })
+
+    if (totalChapters > 0) {
+      return [
+        <div
+          key={0}
+          className="flex flex-col gap-2 bg-white p-4 max-w-screen-md"
         >
-          Update Cover Image
-        </Button>
-      </div>,
-      ...storyPages,
-      <div key={story.output.chapters.length + 1}>
-        <StoryLastPage story={story} />
-      </div>,
-    ]
-  }, [story, storyPages, regenerateCoverImage, skinColor, selectedCoverInput, isTakePhotoOpen])
+          <span className="font-bold text-4xl text-primary">Cover image</span>
+          <CoverImageEditor
+            story={story}
+            prompt={prompt}
+            regenerateImage={regenerateCoverImage}
+          />
+        </div>,
+        ...storyPages,
+        <div key={totalChapters + 1}>
+          <StoryLastPage story={story} />
+        </div>,
+      ]
+    }
+
+    return []
+  }, [story, storyPages, regenerateCoverImage])
 
   const title = story?.output.story_cover.title ?? ""
 
@@ -292,19 +374,16 @@ export default function ViewStory({ params }: { params: PageParams }) {
           <h2 className="font-bold text-4xl text-center p-10 bg-primary text-white">
             {title}
           </h2>
-
           {story && (
             <div className="flex justify-center">
               <div className="flex flex-col lg:flex-row gap-2 max-w-screen-lg">
                 <div className="flex flex-col gap-2">
                   <span className="font-bold text-4xl text-primary">
-                    1. Edit images
+                    1. Edit image
                   </span>
                   <ImageEditorControl
                     story={story}
-                    onRegenerate={() =>
-                      regenerateCoverImage({ skinColor })
-                    }
+                    onRegenerate={regenerateAllImages}
                     generateTxt="Regenerate all images"
                     withAction
                   />
@@ -316,7 +395,6 @@ export default function ViewStory({ params }: { params: PageParams }) {
               </div>
             </div>
           )}
-
           <div className="flex flex-col justify-center items-center gap-4 mt-10">
             {bookPages}
           </div>

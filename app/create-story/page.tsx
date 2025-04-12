@@ -20,11 +20,7 @@ import { UserDetailContext } from "../_context/UserDetailConext"
 import { generateImage } from "../_utils/api"
 import { createStory } from "../_utils/db"
 import { getImageData } from "../_utils/imageUtils"
-import {
-  getBasePrompt,
-  getStoryPrompt,
-  getConsistentPrompt,
-} from "../_utils/storyUtils"
+import { getBasePrompt, getStoryPrompt } from "../_utils/storyUtils"
 import AgeGroup from "./_components/AgeGroup"
 import ImageInput from "./_components/ImageInput"
 import ImageStyle from "./_components/ImageStyle"
@@ -103,7 +99,7 @@ export default function CreateStory() {
 
   const onGenerateStory = async () => {
     if (userDetail!.credit! <= 0) {
-      notifyError("You don’t have enough credits!")
+      notifyError("You dont have enough credits!")
       return
     }
 
@@ -130,22 +126,18 @@ export default function CreateStory() {
         .filter((x) => !!x)
         .join(", ")
 
-      const {
-        imageUrl: coverImageUrl,
-        seedImageUrl,
-      } = await generateImage({
+      const { imageUrl: coverImageUrl, seedImageUrl } = await generateImage({
         prompt: coverImagePrompt,
         seedImage,
         skinColor: formData.skinColor,
       })
 
-      // 🔁 Generate chapter images with consistent character
+      // generate chapter images
       for (let index = 0; index < story.chapters.length; index++) {
         const chapter = story.chapters[index]
         if (chapter.image_prompt) {
-          const prompt = getConsistentPrompt(chapter.image_prompt)
           const { imageUrl } = await generateImage({
-            prompt,
+            prompt: chapter.image_prompt,
             seedImage: seedImageUrl,
             skinColor: formData.skinColor,
           })
@@ -178,8 +170,8 @@ export default function CreateStory() {
         CREATE YOUR STORY
       </h2>
       <p className="text-2xl text-primary text-center">
-        Unlock your creativity with AI: Craft stories like never before! Let
-        our AI bring your imagination to life, one story at a time.
+        Unlock your creativity with AI: Craft stories like never before!Let our
+        AI bring your imagination to life, one story at a time.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-14 max-w-screen-2xl justify-self-center">
