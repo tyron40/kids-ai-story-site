@@ -9,6 +9,7 @@ import {
 import { Image } from "@nextui-org/react"
 import { useRef, useState } from "react"
 import { Camera, CameraType } from "react-camera-pro"
+import { getImageData } from "@/app/_utils/imageUtils"
 
 interface ITakePhoto {
   isOpen: boolean
@@ -25,13 +26,15 @@ export default function TakePhoto({
 }: ITakePhoto) {
   const camera = useRef<CameraType>(null)
   const [photo, setPhoto] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const onTakePhoto = () => {
+  const onTakePhoto = async () => {
     if (!camera.current) {
       return;
     }
 
     try {
+      setError(null);
       // Get base64url photo data
       const photoData = camera.current.takePhoto("base64url");
       
@@ -41,23 +44,41 @@ export default function TakePhoto({
           .replace(/-/g, '+')
           .replace(/_/g, '/');
         
-        const formattedPhoto = `data:image/png;base64,${base64Data}`;
-        setPhoto(formattedPhoto);
+        // Remove any existing data URL prefix before adding our own
+        const cleanBase64 = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+        const formattedPhoto = `data:image/jpeg;base64,${cleanBase64}`;
+        
+        // Get optimized image data
+        const optimizedPhoto = await getImageData(formattedPhoto);
+        if (!optimizedPhoto) {
+          throw new Error('Failed to optimize photo');
+        }
+        
+        setPhoto(optimizedPhoto);
       } else {
-        console.error('Unexpected photo data format');
+        throw new Error('Unexpected photo data format');
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error taking photo';
+      setError(errorMessage);
       console.error('Error taking photo:', error);
     }
   }
 
   const onRetakePhoto = () => {
     setPhoto(null);
+    setError(null);
   }
 
   const onPickPhoto = () => {
     if (!photo) return;
     onPhotoPick(photo);
+    setError(null);
+    onClose();
+  }
+
+  const handleClose = () => {
+    setError(null);
     onClose();
   }
 
@@ -74,7 +95,7 @@ export default function TakePhoto({
         <ModalBody className="h-[calc(100dvh-200px)] p-0">
           <div className="relative flex flex-1 w-full h-full">
             {!photo ? (
-              <div className="w-full h-full overflow-hidden">
+              <div className="w-full h-full overflow-hidden bg-black">
                 <div className="relative w-full h-full">
                   <Camera
                     ref={camera}
@@ -88,21 +109,33 @@ export default function TakePhoto({
                     }}
                     facingMode="environment"
                   />
+                  {error && (
+                    <div 
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 text-center p-4 text-white"
+                      role="alert"
+                      aria-live="polite"
+                    >
+                      {error}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
-              <Image 
-                src={photo} 
-                className="w-full h-full object-contain" 
-                alt="Captured photo" 
-              />
+              <div className="w-full h-full bg-black flex items-center justify-center">
+                <Image 
+                  src={photo} 
+                  className="w-full h-full object-contain" 
+                  alt="Captured photo"
+                  role="img"
+                />
+              </div>
             )}
           </div>
         </ModalBody>
-        <ModalFooter className="flex flex-col sm:flex-row gap-responsive-sm w-full">
+        <ModalFooter className="flex flex-col sm:flex-row gap-responsive-sm w-full p-responsive-md">
           <Button 
             color="danger" 
-            onPress={onClose}
+            onPress={handleClose}
             className="w-full sm:w-auto text-responsive-base py-6"
           >
             Cancel

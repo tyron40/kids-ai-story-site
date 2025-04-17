@@ -1,59 +1,118 @@
-export async function urlToFile(url: string) {
-  const response = await fetch(url)
-  const data = await response.blob()
+const MAX_SIZE = 1024; // Maximum dimension
+const QUALITY = 0.8; // JPEG quality
+const SIZE_THRESHOLD = 500 * 1024; // 500KB threshold for optimization
 
-  return new File([data], "result.png", {
-    type: "image/png",
-  })
+async function optimizeImage(data: Blob): Promise<Blob> {
+  // Skip optimization for small images
+  if (data.size <= SIZE_THRESHOLD) {
+    return data;
+  }
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+      
+      // Calculate new dimensions while maintaining aspect ratio
+      if (width > height && width > MAX_SIZE) {
+        height = Math.round((height * MAX_SIZE) / width);
+        width = MAX_SIZE;
+      } else if (height > MAX_SIZE) {
+        width = Math.round((width * MAX_SIZE) / height);
+        height = MAX_SIZE;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      
+      const ctx = canvas.getContext('2d', { alpha: false }); // Disable alpha for JPEGs
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+      
+      // Fill with white background for JPEGs
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, width, height);
+      
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      canvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error('Failed to create blob')),
+        'image/jpeg',
+        QUALITY
+      );
+    };
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(data);
+  });
 }
 
-export function toBase64(file: File): Promise<string> {
+async function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.readAsDataURL(file)
+    const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        resolve(reader.result)
+        resolve(reader.result);
       } else {
-        reject(new Error('Failed to convert file to base64'))
+        reject(new Error('Failed to convert blob to base64'));
       }
-    }
-    reader.onerror = (error) => reject(error)
-  })
-}
-
-export async function urlToBase64(url: string): Promise<string> {
-  const file = await urlToFile(url)
-  return await toBase64(file)
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 export async function getImageData(image: File | string): Promise<string | null> {
   if (!image) return null;
 
   try {
-    // If image is a File object
+    let blob: Blob;
+
     if (typeof image === "object") {
-      return (await toBase64(image)) as string;
+      // Handle File object
+      blob = image;
+    } else if (image.startsWith('data:image/')) {
+      // Handle base64 data URL
+      const base64Data = image.split(',')[1];
+      if (!base64Data) throw new Error('Invalid base64 data URL');
+      
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers);
+      blob = new Blob([byteArray], { type: 'image/jpeg' });
+    } else if (image.match(/^[A-Za-z0-9+/=]+$/)) {
+      // Handle raw base64 string (from camera)
+      const byteCharacters = atob(image);
+      const byteNumbers = new Array(byteCharacters.length);
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers);
+      blob = new Blob([byteArray], { type: 'image/jpeg' });
+    } else if (image.startsWith('http')) {
+      // Handle URL
+      const response = await fetch(image);
+      if (!response.ok) throw new Error('Failed to fetch image URL');
+      blob = await response.blob();
+    } else {
+      throw new Error('Invalid image format');
     }
 
-    // If image is already a base64 string with data:image prefix
-    if (image.startsWith('data:image/')) {
-      return image;
-    }
+    // Optimize the blob
+    const optimizedBlob = await optimizeImage(blob);
+    return await blobToBase64(optimizedBlob);
 
-    // If image is a raw base64 string (from camera)
-    if (image.match(/^[A-Za-z0-9+/=]+$/)) {
-      return `data:image/png;base64,${image}`;
-    }
-
-    // If image is a URL
-    if (image.startsWith('http')) {
-      return await urlToBase64(image);
-    }
-
-    return image;
   } catch (error) {
-    console.error('Error processing image data:', error);
+    console.error('Error processing image:', error);
     return null;
   }
 }
