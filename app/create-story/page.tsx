@@ -165,16 +165,16 @@ export default function CreateStory() {
   }
 
   return (
-    <div className="p-10 md:px-20 lg:px-40">
-      <h2 className="font-extrabold text-[70px] text-primary text-center">
+    <div className="p-responsive-md md:px-20 lg:px-40">
+      <h2 className="font-extrabold text-responsive-3xl text-primary text-center">
         CREATE YOUR STORY
       </h2>
-      <p className="text-2xl text-primary text-center">
+      <p className="text-responsive-lg text-primary text-center max-w-3xl mx-auto">
         Unlock your creativity with AI: Craft stories like never before!Let our
         AI bring your imagination to life, one story at a time.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-14 max-w-screen-2xl justify-self-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-responsive-lg mt-responsive-xl max-w-screen-2xl mx-auto">
         <div className="grid grid-cols-2 gap-2">
           <StorySubjectInput userSelection={onHandleUserSelection} />
           <ImageInput userSelection={onHandleUserSelection} />
@@ -186,16 +186,16 @@ export default function CreateStory() {
         <TotalChaptersSelect userSelection={onHandleUserSelection} />
       </div>
 
-      <div className="flex justify-end my-10 flex-col items-end">
+      <div className="flex justify-center md:justify-end my-responsive-lg flex-col items-center md:items-end">
         <Button
           color="primary"
           disabled={loading}
-          className="p-8 text-2xl"
+          className="p-6 text-responsive-lg w-full md:w-auto"
           onPress={onGenerateStory}
         >
           Generate Story
         </Button>
-        <span className="mt-2">1 Credit will be used</span>
+        <span className="mt-responsive-sm text-responsive-sm">1 Credit will be used</span>
       </div>
       <CustomLoader isLoading={loading} />
     </div>

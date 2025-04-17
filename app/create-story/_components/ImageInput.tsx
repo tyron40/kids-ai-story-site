@@ -47,32 +47,43 @@ export default function ImageInput({
   }
 
   return (
-    <div>
+    <div className="w-full">
       <label
         htmlFor="story-image-input"
-        className="font-bold text-4xl text-primary"
+        className="font-bold text-responsive-xl text-primary block mb-responsive-sm"
       >
         Your image (optional)
       </label>
-      <div className="flex flex-col justify-between items-center mt-3 gap-3">
-        <Input
-          id="story-image-input"
-          type="file"
-          accept="image/*"
-          size="md"
-          className="max-w-md"
-          onChange={onFilePick}
-        />
-        <Button color="primary" onPress={onTakePhotoOpen} className="w-full">
+      <div className="flex flex-col justify-between items-stretch mt-responsive-sm gap-responsive-sm">
+        <div className="relative w-full">
+          <Input
+            id="story-image-input"
+            type="file"
+            accept="image/*"
+            size="lg"
+            className="w-full"
+            onChange={onFilePick}
+          />
+        </div>
+        <Button 
+          color="primary" 
+          onPress={onTakePhotoOpen} 
+          className="w-full py-6 text-responsive-base"
+        >
           Take Photo
         </Button>
         {image && (
-          <div className="relative flex justify-center items-center gap-2 max-h-[180px]">
-            <Image src={image} className="max-h-[180px]" alt="" />
+          <div className="relative w-full aspect-video flex justify-center items-center">
+            <Image 
+              src={image} 
+              className="w-full h-full object-contain rounded-lg" 
+              alt="Selected image preview" 
+            />
             <Button
               color="danger"
               onPress={onFileRemove}
-              className="absolute top-0 right-0 z-10"
+              className="absolute top-2 right-2 z-10"
+              size="sm"
             >
               Remove
             </Button>
