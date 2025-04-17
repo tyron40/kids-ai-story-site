@@ -61,8 +61,10 @@ export default function ViewStory({ params }: { params: PageParams }) {
       }
 
       try {
+        // Process seed image if provided
+        let processedSeedImage: string | null = null
         if (seedImage) {
-          seedImage = await getImageData(seedImage)
+          processedSeedImage = await getImageData(seedImage)
         }
 
         const prompt =
@@ -75,8 +77,8 @@ export default function ViewStory({ params }: { params: PageParams }) {
 
         const { imageUrl } = await generateImage({
           prompt,
-          seedImage: seedImage ?? story.output.seedImageUrl,
-          skinColor,
+          seedImage: processedSeedImage || story.output.seedImageUrl || null,
+          skinColor: skinColor || null,
         })
 
         story.coverImage = imageUrl
@@ -111,27 +113,30 @@ export default function ViewStory({ params }: { params: PageParams }) {
           (x) => x.chapter_title === chapter.chapter_title
         )
 
+        // Process seed image if provided
+        let processedSeedImage: string | null = null
         if (seedImage) {
-          seedImage = await getImageData(seedImage)
+          processedSeedImage = await getImageData(seedImage)
         }
 
         const prompt = imagePrompt ?? chapter.image_prompt
-        skinColor =
-          skinColor ??
-          story.output.chapters[chapterIndex].skin_color ??
-          story.skinColor
+        const skinColorToUse =
+          skinColor ||
+          story.output.chapters[chapterIndex].skin_color ||
+          story.skinColor ||
+          null
 
         const { imageUrl } = await generateImage({
           prompt,
-          seedImage: seedImage ?? story.output.seedImageUrl,
-          skinColor,
+          seedImage: processedSeedImage || story.output.seedImageUrl || null,
+          skinColor: skinColorToUse,
         })
 
         story.output.chapters[chapterIndex] = {
           ...story.output.chapters[chapterIndex],
           chapter_image: imageUrl,
           image_prompt: prompt,
-          skin_color: skinColor,
+          skin_color: skinColorToUse,
         }
 
         setStory({
@@ -201,33 +206,39 @@ export default function ViewStory({ params }: { params: PageParams }) {
       try {
         setLoading(true)
 
+        // Process seed image if provided
+        let processedSeedImage: string | null = null
         if (seedImage) {
-          seedImage = await getImageData(seedImage)
+          processedSeedImage = await getImageData(seedImage)
         }
+
+        const seedImageToUse = processedSeedImage || story.output.seedImageUrl || null
+        const skinColorToUse = skinColor || null
 
         const prompt = getStoryCoverImagePrompt({
           story,
           gaiStory: story.output,
-          seedImage: seedImage ?? story.output.seedImageUrl,
+          seedImage: seedImageToUse,
         })
 
+        // Generate cover image
         const { imageUrl: coverImageUrl, seedImageUrl } = await generateImage({
           prompt,
-          seedImage: seedImage ?? story.output.seedImageUrl,
-          skinColor,
+          seedImage: seedImageToUse,
+          skinColor: skinColorToUse,
         })
 
         story.coverImage = coverImageUrl
         story.output.seedImageUrl = seedImageUrl
 
-        // generate chapter images
+        // Generate chapter images
         for (let index = 0; index < story.output.chapters.length; index++) {
           const chapter = story.output.chapters[index]
           if (chapter.image_prompt) {
             const { imageUrl } = await generateImage({
               prompt: chapter.image_prompt,
-              seedImage: seedImageUrl,
-              skinColor,
+              seedImage: seedImageUrl || null,
+              skinColor: skinColorToUse,
             })
             story.output.chapters[index].chapter_image = imageUrl
           }
@@ -298,7 +309,7 @@ export default function ViewStory({ params }: { params: PageParams }) {
         return (
           <div
             key={`chapter-${index + 1}-img`}
-            className="flex flex-col gap-2 bg-white p-4 max-w-screen-md"
+            className="flex flex-col gap-responsive-sm bg-white p-responsive-md w-full max-w-screen-md rounded-lg shadow-lg"
           >
             <span className="font-bold text-4xl text-primary">
               Chapter {index + 1}
@@ -346,9 +357,9 @@ export default function ViewStory({ params }: { params: PageParams }) {
       return [
         <div
           key={0}
-          className="flex flex-col gap-2 bg-white p-4 max-w-screen-md"
+          className="flex flex-col gap-responsive-sm bg-white p-responsive-md w-full max-w-screen-md rounded-lg shadow-lg"
         >
-          <span className="font-bold text-4xl text-primary">Cover image</span>
+          <span className="font-bold text-responsive-xl text-primary">Cover image</span>
           <CoverImageEditor
             story={story}
             prompt={prompt}
@@ -370,15 +381,15 @@ export default function ViewStory({ params }: { params: PageParams }) {
   return (
     <>
       {!loading && (
-        <div className="p-10 md:px-20 lg:px-40 flex flex-col gap-4 min-h-screen">
-          <h2 className="font-bold text-4xl text-center p-10 bg-primary text-white">
+        <div className="p-responsive-md md:px-20 lg:px-40 flex flex-col gap-responsive-md min-h-screen">
+          <h2 className="font-bold text-responsive-2xl text-center p-responsive-md bg-primary text-white">
             {title}
           </h2>
           {story && (
             <div className="flex justify-center">
-              <div className="flex flex-col lg:flex-row gap-2 max-w-screen-lg">
-                <div className="flex flex-col gap-2">
-                  <span className="font-bold text-4xl text-primary">
+              <div className="flex flex-col lg:flex-row gap-responsive-md max-w-screen-lg w-full px-responsive-sm">
+                <div className="flex flex-col gap-responsive-sm flex-1">
+                  <span className="font-bold text-responsive-xl text-primary">
                     1. Edit image
                   </span>
                   <ImageEditorControl
@@ -395,7 +406,7 @@ export default function ViewStory({ params }: { params: PageParams }) {
               </div>
             </div>
           )}
-          <div className="flex flex-col justify-center items-center gap-4 mt-10">
+          <div className="flex flex-col justify-center items-center gap-responsive-md mt-responsive-lg">
             {bookPages}
           </div>
         </div>

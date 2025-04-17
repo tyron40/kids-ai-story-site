@@ -52,29 +52,37 @@ export default function CoverImageEditor({
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-2 items-center lg:items-start">
-      <StoryCoverPage
-        imageUrl={story?.coverImage}
-        width={300}
-        height={300}
-        className="rounded-2xl overflow-hidden"
-      />
-      <div className="flex flex-col gap-4">
-        <span className="font-bold text-4xl text-primary">1. Edit image</span>
+    <div className="flex flex-col lg:flex-row gap-responsive-md items-center lg:items-start">
+      <div className="w-full lg:w-[300px]">
+        <StoryCoverPage
+          imageUrl={story?.coverImage}
+          className="w-full aspect-square rounded-lg overflow-hidden"
+        />
+      </div>
+      <div className="flex flex-col gap-responsive-md w-full">
+        <span className="font-bold text-responsive-xl text-primary">1. Edit image</span>
         <ImageEditorControl
           story={story}
           onRegenerate={async (newImage?: File | string) => setImage(newImage)}
         />
         <SkinColor value={story.skinColor} userSelection={onSkinColorChange} />
+        <label
+          htmlFor="cover-image-prompt"
+          className="font-bold text-responsive-xl text-primary"
+        >
+          3. Image prompt
+        </label>
         <Textarea
           id="cover-image-prompt"
           defaultValue={imagePrompt}
           onChange={(e) => setImagePrompt(e.target.value)}
+          className="min-h-[100px]"
         />
         <Button
           color="primary"
           onPress={onRegenerateImage}
           isLoading={isLoading}
+          className="w-full py-6 text-responsive-base"
         >
           Generate new image
         </Button>

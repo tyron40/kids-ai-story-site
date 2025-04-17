@@ -55,10 +55,12 @@ export default function ChapterEditor({
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-2 items-center lg:items-start">
-      <StoryImage chapter={chapter} width={300} height={300} />
-      <div className="flex flex-col gap-4">
-        <span className="font-bold text-4xl text-primary">1. Edit image</span>
+    <div className="flex flex-col lg:flex-row gap-responsive-md items-center lg:items-start">
+      <div className="w-full lg:w-[300px]">
+        <StoryImage chapter={chapter} />
+      </div>
+      <div className="flex flex-col gap-responsive-md w-full">
+        <span className="font-bold text-responsive-xl text-primary">1. Edit image</span>
         <ImageEditorControl
           story={story}
           onRegenerate={async (newImage?: File | string) => setImage(newImage)}
@@ -69,7 +71,7 @@ export default function ChapterEditor({
         />
         <label
           htmlFor={`image-prompt-${chapter.chapter_title}`}
-          className="font-bold text-4xl text-primary"
+          className="font-bold text-responsive-xl text-primary"
         >
           3. Image prompt
         </label>
@@ -77,11 +79,13 @@ export default function ChapterEditor({
           id={`image-prompt-${chapter.chapter_title}`}
           defaultValue={imagePrompt}
           onChange={(e) => setImagePrompt(e.target.value)}
+          className="min-h-[100px]"
         />
         <Button
           color="primary"
           onPress={onRegenerateImage}
           isLoading={isLoading}
+          className="w-full py-6 text-responsive-base"
         >
           Generate new image
         </Button>

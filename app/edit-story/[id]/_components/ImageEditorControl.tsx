@@ -51,22 +51,27 @@ export default function ImageEditorControl({
   const seedImage = seedData ?? story?.output.seedImageUrl
 
   return (
-    <div className="flex flex-1 flex-row justify-center gap-4">
+    <div className="flex flex-col lg:flex-row justify-center gap-responsive-md w-full">
       {seedImage && (
-        <div className="flex flex-col gap-4">
-          <span>Seed image:</span>
-          <div className="relative max-w-[200px]">
-            <Image src={seedImage} className="object-contain" alt="" />
+        <div className="flex flex-col gap-responsive-sm">
+          <span className="text-responsive-base">Seed image:</span>
+          <div className="w-full lg:w-[200px] aspect-square relative">
+            <Image 
+              src={seedImage} 
+              className="w-full h-full object-contain rounded-lg" 
+              alt="Seed image" 
+            />
           </div>
         </div>
       )}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-responsive-md flex-1">
         <ImageInput userSelection={onImageInputChange} />
         {withAction && (
           <Button
             color="primary"
             onPress={onRegenerateImage}
             isLoading={isLoading}
+            className="w-full py-6 text-responsive-base"
           >
             {generateTxt}
           </Button>

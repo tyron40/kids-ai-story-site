@@ -6,15 +6,11 @@ import { Image } from "@nextui-org/react"
 interface StoryImageProps {
   chapter: Chapter
   regenerateImage?: (chapter: Chapter) => Promise<void>
-  width?: number
-  height?: number
 }
 
 export default function StoryImage({
   chapter,
   regenerateImage,
-  width = 500,
-  height = 500,
 }: StoryImageProps) {
   const { onRegenerateImage, isLoading } = useRegenerateImage({
     regenerateImage: regenerateImage
@@ -23,23 +19,25 @@ export default function StoryImage({
   })
 
   return (
-    <>
-      <Image
-        src={chapter.chapter_image}
-        width={width}
-        height={height}
-        alt={chapter.image_prompt}
-      />
+    <div className="w-full flex flex-col items-center gap-responsive-sm">
+      <div className="w-full aspect-square relative">
+        <Image
+          src={chapter.chapter_image}
+          alt={chapter.image_prompt}
+          className="w-full h-full object-contain"
+          radius="lg"
+        />
+      </div>
       {onRegenerateImage && (
         <Button
           color="primary"
-          className="mt-3"
+          className="w-full py-6 text-responsive-base"
           onPress={onRegenerateImage}
           isLoading={isLoading}
         >
           Regenerate chapter image
         </Button>
       )}
-    </>
+    </div>
   )
 }
