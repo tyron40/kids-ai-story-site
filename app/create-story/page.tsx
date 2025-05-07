@@ -132,13 +132,19 @@ export default function CreateStory() {
         skinColor: formData.skinColor,
       })
 
+      // Use the cover image as seed for maintaining character consistency
+      const coverImageSeed = coverImageUrl;
+
       // generate chapter images
       for (let index = 0; index < story.chapters.length; index++) {
         const chapter = story.chapters[index]
         if (chapter.image_prompt) {
+          // Enhance the chapter prompt to maintain character consistency
+          const enhancedPrompt = `${chapter.image_prompt}. Maintain the same character appearance and style as the cover image.`;
+          
           const { imageUrl } = await generateImage({
-            prompt: chapter.image_prompt,
-            seedImage: seedImageUrl,
+            prompt: enhancedPrompt,
+            seedImage: coverImageSeed, // Use cover image as seed for all chapters
             skinColor: formData.skinColor,
           })
           story.chapters[index].chapter_image = imageUrl
