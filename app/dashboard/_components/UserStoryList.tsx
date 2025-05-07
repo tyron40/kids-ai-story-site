@@ -1,9 +1,9 @@
 "use client"
+
 import CustomLoader from "@/app/_components/CustomLoader"
 import { getUserStories, StoryItem } from "@/app/_utils/db"
 import { useUser } from "@clerk/nextjs"
 import { useCallback, useEffect, useState } from "react"
-
 import StoryItemCard from "./StoryItemCard"
 import LinkButton from "@/app/_components/LinkButton"
 
@@ -36,7 +36,13 @@ export default function UserStoryList() {
         {storyList.length > 0 &&
           storyList.map((item: StoryItem) => (
             <div key={item.id} className="flex flex-col items-center gap-4">
-              <StoryItemCard story={item} />
+              <StoryItemCard 
+                story={item} 
+                onDelete={() => {
+                  // Refresh the story list after deletion
+                  initData()
+                }}
+              />
               <LinkButton
                 href={`/edit-story/${item.storyId}`}
                 text="Edit Story"
@@ -45,6 +51,11 @@ export default function UserStoryList() {
           ))}
       </div>
       <CustomLoader isLoading={loading} />
+      {storyList.length === 0 && !loading && (
+        <div className="text-center mt-10">
+          <p className="text-gray-500">No stories found. Create your first story!</p>
+        </div>
+      )}
     </div>
   )
 }

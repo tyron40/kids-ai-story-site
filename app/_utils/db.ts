@@ -101,3 +101,10 @@ export async function updateUserCredits(userEmail: string, credit: number) {
 
   return result
 }
+
+export async function deleteStory(storyId: string) {
+  return await db
+    .delete(StoryData)
+    .where(eq(StoryData.storyId, storyId))
+    .returning({ id: StoryData.id })
+}
