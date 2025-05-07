@@ -7,6 +7,7 @@ import { StoryItem, deleteStory } from "@/app/_utils/db"
 import { useState } from "react"
 import { toast } from "react-toastify"
 import { IoTrashOutline } from "react-icons/io5"
+import "@/app/styles/mobile.css"
 
 interface StoryItemCardProps {
   story: StoryItem
@@ -36,36 +37,39 @@ export default function StoryItemCard({ story, onDelete }: StoryItemCardProps) {
   }
 
   return (
-    <div className="relative">
-      {/* Delete Button - Positioned absolutely in the top-right corner */}
+    <div className="relative w-full">
       <Button
         isIconOnly
-        className="absolute -top-2 -right-2 z-20 bg-red-500 text-white rounded-full w-8 h-8 shadow-lg hover:bg-red-600"
+        className="absolute -top-2 -right-2 z-20 bg-red-500 text-white rounded-full w-10 h-10 min-w-0 shadow-lg hover:bg-red-600 active:bg-red-700 touch-friendly no-tap-highlight touch-feedback"
         size="sm"
         isLoading={isDeleting}
         onClick={handleDelete}
       >
-        {!isDeleting && <IoTrashOutline className="text-lg" />}
+        {!isDeleting && <IoTrashOutline className="text-xl" />}
       </Button>
 
-      <Link href={"/view-story/" + story?.storyId}>
+      <Link href={"/view-story/" + story?.storyId} className="block w-full no-tap-highlight">
         <Card
           isFooterBlurred
-          className="w-full h-[300px] col-span-12 sm:col-span-5 hover:scale-105 transition-all cursor-pointer"
+          className="w-full h-[280px] col-span-12 sm:col-span-5 hover:scale-105 transition-all cursor-pointer no-select"
         >
           <Image
-            alt="Card example background"
-            className="z-0 w-full h-full scale-125 -translate-y-6 object-cover"
+            alt="Story cover"
+            className="z-0 w-full h-full object-cover"
             src={story?.coverImage}
             width={500}
             height={500}
+            priority
+            draggable={false}
           />
-          <CardFooter className="absolute bg-white/30 bottom-0 border-t-1 border-zinc-100/50 z-10 justify-between">
-            <div>
-              <p className="text-black text-xl">{story.output.story_cover.title}</p>
+          <CardFooter 
+            className="absolute bg-white/30 bottom-0 border-t-1 border-zinc-100/50 z-10 justify-between p-4 no-select"
+          >
+            <div className="flex-1">
+              <p className="text-black text-lg font-medium line-clamp-2">{story.output.story_cover.title}</p>
             </div>
             <Button 
-              className="text-tiny" 
+              className="text-sm ml-2 min-w-[90px] touch-friendly no-tap-highlight touch-feedback" 
               color="primary" 
               radius="full" 
               size="sm"
