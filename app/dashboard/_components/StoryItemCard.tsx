@@ -7,6 +7,7 @@ import { StoryItem, deleteStory } from "@/app/_utils/db"
 import { useState } from "react"
 import { toast } from "react-toastify"
 import { IoTrashOutline } from "react-icons/io5"
+import { twMerge } from "tailwind-merge"
 import "@/app/styles/mobile.css"
 
 interface StoryItemCardProps {
@@ -37,21 +38,34 @@ export default function StoryItemCard({ story, onDelete }: StoryItemCardProps) {
   }
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full safe-area-padding">
       <Button
         isIconOnly
-        className="absolute -top-2 -right-2 z-20 bg-red-500 text-white rounded-full w-10 h-10 min-w-0 shadow-lg hover:bg-red-600 active:bg-red-700 touch-friendly no-tap-highlight touch-feedback"
-        size="sm"
+        className={twMerge(
+          "absolute -top-2 -right-2 z-20 bg-red-500 text-white rounded-full shadow-lg",
+          "w-12 h-12 min-w-[48px] min-h-[48px]", // Increased touch target
+          "touch-friendly ios-button no-tap-highlight touch-feedback",
+          "hover:bg-red-600 active:bg-red-700"
+        )}
+        size="lg"
         isLoading={isDeleting}
         onClick={handleDelete}
       >
-        {!isDeleting && <IoTrashOutline className="text-xl" />}
+        {!isDeleting && <IoTrashOutline className="text-2xl" />}
       </Button>
 
-      <Link href={"/view-story/" + story?.storyId} className="block w-full no-tap-highlight">
+      <Link 
+        href={"/view-story/" + story?.storyId} 
+        className="block w-full no-tap-highlight touch-friendly"
+      >
         <Card
           isFooterBlurred
-          className="w-full h-[280px] col-span-12 sm:col-span-5 hover:scale-105 transition-all cursor-pointer no-select"
+          className={twMerge(
+            "w-full h-[280px] col-span-12 sm:col-span-5",
+            "transition-transform duration-200 cursor-pointer",
+            "touch-feedback no-select ios-text",
+            "active:scale-[0.98]" // iOS touch feedback
+          )}
         >
           <Image
             alt="Story cover"
@@ -63,16 +77,25 @@ export default function StoryItemCard({ story, onDelete }: StoryItemCardProps) {
             draggable={false}
           />
           <CardFooter 
-            className="absolute bg-white/30 bottom-0 border-t-1 border-zinc-100/50 z-10 justify-between p-4 no-select"
+            className={twMerge(
+              "absolute bg-white/30 bottom-0 border-t-1 border-zinc-100/50 z-10",
+              "justify-between p-4 no-select safe-area-padding"
+            )}
           >
             <div className="flex-1">
-              <p className="text-black text-lg font-medium line-clamp-2">{story.output.story_cover.title}</p>
+              <p className="text-black text-lg font-medium line-clamp-2 ios-text">
+                {story.output.story_cover.title}
+              </p>
             </div>
             <Button 
-              className="text-sm ml-2 min-w-[90px] touch-friendly no-tap-highlight touch-feedback" 
+              className={twMerge(
+                "text-sm ml-2",
+                "min-w-[100px] min-h-[44px]", // Increased touch target
+                "touch-friendly ios-button no-tap-highlight touch-feedback ios-text"
+              )}
               color="primary" 
               radius="full" 
-              size="sm"
+              size="lg"
               onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
                 e.preventDefault()
                 e.stopPropagation()

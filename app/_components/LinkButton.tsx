@@ -15,13 +15,23 @@ const LinkButton = ({ text, className, ...props }: InternalLinkProps) => {
     <Link
       {...props}
       className={twMerge(
-        "text-white bg-primary hover:opacity-90 focus:ring-4 focus:ring-blue-300 font-medium rounded-xl text-sm px-5 py-2.5 focus:outline-none",
+        // Base styles
+        "text-white bg-primary font-medium rounded-xl text-sm",
+        // Size and spacing
+        "px-6 py-3",
+        // Focus states
+        "focus:ring-4 focus:ring-blue-300 focus:outline-none",
+        // Mobile optimizations
+        "touch-friendly ios-button no-tap-highlight no-select touch-feedback ios-text",
+        // Center content
         "flex items-center justify-center",
-        "touch-friendly no-tap-highlight no-select touch-feedback",
+        // Custom classes
         className
       )}
+      role="button"
+      aria-label={text}
     >
-      {text}
+      <span className="ios-text">{text}</span>
     </Link>
   )
 }
