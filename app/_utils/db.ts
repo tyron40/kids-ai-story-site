@@ -1,6 +1,6 @@
 import { db } from "@/config/db"
 import { GAIStoryData } from "@/config/GeminiAi"
-import { StoryData, Users } from "@/config/schema"
+import { StoryData, Users } from "@/config/schema" // Updated import path
 import { desc, eq } from "drizzle-orm"
 
 export type StoryItem = typeof StoryData.$inferSelect

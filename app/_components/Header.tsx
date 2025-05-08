@@ -37,11 +37,15 @@ export default function Header() {
   const { isSignedIn } = useUser()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   return (
-    <Navbar maxWidth="full" onMenuOpenChange={setIsMenuOpen}>
+    <Navbar 
+      maxWidth="full" 
+      onMenuOpenChange={setIsMenuOpen}
+      className="bg-white navbar-mobile" // Added navbar-mobile class
+    >
       <NavbarContent>
         <NavbarMenuToggle
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          className="sm:hidden"
+          className="sm:hidden touch-friendly no-tap-highlight" // Added touch-friendly and no-tap-highlight
         />
         <NavbarBrand>
           <Image src={"/logo.svg"} alt="logo" width={40} height={40} />
@@ -60,16 +64,27 @@ export default function Header() {
       </NavbarContent>
       <NavbarContent justify="end">
         <Link href={"/dashboard"}>
-          <Button color="primary">
+          <Button 
+            color="primary"
+            className="touch-friendly no-tap-highlight" // Added touch-friendly and no-tap-highlight
+          >
             {isSignedIn ? "Dashboard" : "Get Started"}
           </Button>
         </Link>
         <UserButton />
       </NavbarContent>
-      <NavbarMenu>
+      <NavbarMenu className="bg-white navbar-menu-mobile"> {/* Added navbar-menu-mobile class */}
         {MenuList.map((item) => (
-          <NavbarMenuItem key={item.path}>
-            <Link href={item.path}>{item.name}</Link>
+          <NavbarMenuItem 
+            key={item.path}
+            className="touch-spacing" // Added touch-spacing for better tap targets
+          >
+            <Link 
+              href={item.path} 
+              className="w-full text-primary touch-friendly no-tap-highlight" // Added touch-friendly and no-tap-highlight
+            >
+              {item.name}
+            </Link>
           </NavbarMenuItem>
         ))}
       </NavbarMenu>

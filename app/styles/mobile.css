@@ -91,3 +91,16 @@
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
+
+/* Add specific mobile navbar styles */
+@media (max-width: 640px) {
+  .navbar-mobile {
+    background-color: white !important;
+    padding: 0.5rem 1rem;
+  }
+  
+  .navbar-menu-mobile {
+    background-color: white !important;
+    padding-top: 1.5rem;
+  }
+}
