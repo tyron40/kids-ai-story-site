@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const config = {
   images: {
     domains: ["firebasestorage.googleapis.com"],
     unoptimized: false,
@@ -18,4 +18,4 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+export default config

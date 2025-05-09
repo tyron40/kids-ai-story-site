@@ -14,7 +14,7 @@ export default function Hero() {
     <div className="px-4 sm:px-8 md:px-28 lg:px-44 min-h-[calc(100vh-env(safe-area-inset-top)-4rem)] ios-safe-padding">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center py-6">
         <div className="order-2 md:order-1 flex flex-col">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl text-primary font-extrabold py-4">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl text-primary font-extrabold py-4">
             Turn Your Child&apos;s Imagination into Magical Stories Instantly
           </h2>
           <p className="text-base sm:text-lg text-primary font-light mb-6">
