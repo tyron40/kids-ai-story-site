@@ -7,24 +7,17 @@
   "env": {
     "NODE_ENV": "production"
   },
-  "build": {
-    "env": {
-      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "@next_public_clerk_publishable_key",
-      "CLERK_SECRET_KEY": "@clerk_secret_key",
-      "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/sign-in",
-      "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/sign-up",
-      "DATABASE_URL": "@database_url",
-      "NEXT_PUBLIC_DATABASE_URL": "@database_url",
-      "NEXT_PUBLIC_GEMINI_API_KEY": "@next_public_gemini_api_key",
-      "NEXT_PUBLIC_CREATE_STORY_PROMPT": "@next_public_create_story_prompt",
-      "NEXT_PUBLIC_FIREBASE_API_KEY": "@next_public_firebase_api_key",
-      "NEXT_PUBLIC_PAYPAL_CLIENT_ID": "@next_public_paypal_client_id",
-      "REPLICATE_API_KEY": "@replicate_api_token"
-    }
-  },
   "images": {
+    "sizes": [256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     "domains": ["firebasestorage.googleapis.com"],
-    "minimumCacheTTL": 60
+    "minimumCacheTTL": 60,
+    "formats": ["image/webp"],
+    "remotePatterns": [
+      {
+        "protocol": "https",
+        "hostname": "firebasestorage.googleapis.com"
+      }
+    ]
   },
   "headers": [
     {
