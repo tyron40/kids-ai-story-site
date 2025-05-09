@@ -1,106 +1,81 @@
-/* Mobile-specific styles */
-@supports (padding: max(0px)) {
-  .safe-area-padding {
-    padding-top: max(env(safe-area-inset-top), 1rem);
-    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
-    padding-left: max(env(safe-area-inset-left), 1rem);
-    padding-right: max(env(safe-area-inset-right), 1rem);
-  }
-}
-
-/* iOS-specific button styles */
-@supports (-webkit-touch-callout: none) {
-  .ios-button {
-    -webkit-appearance: none;
-    appearance: none;
-    cursor: pointer;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.75rem;
-    font-weight: 500;
-    text-align: center;
-    transition: background-color 0.2s ease;
-    /* Prevent double-tap zoom */
-    touch-action: manipulation;
-  }
-
-  /* Fix iOS button hover state */
-  .ios-button:hover {
-    opacity: 1;
-  }
-
-  /* Add active state for iOS */
-  .ios-button:active {
-    opacity: 0.7;
-    transform: scale(0.98);
-  }
-}
-
-/* Ensure proper touch targets */
+/* Common mobile styles */
 .touch-friendly {
   min-height: 44px;
   min-width: 44px;
-  /* Add padding for better touch area */
   padding: 0.75rem;
-  /* Prevent text selection */
-  -webkit-user-select: none;
-  user-select: none;
-  /* Remove tap highlight */
-  -webkit-tap-highlight-color: transparent;
-  /* Prevent double-tap zoom */
   touch-action: manipulation;
 }
 
-/* Fix iOS scroll behavior */
-.ios-scroll {
-  -webkit-overflow-scrolling: touch;
-  overflow-y: auto;
-  /* Prevent elastic scroll on iOS */
-  overscroll-behavior-y: none;
-  /* Prevent pull-to-refresh */
-  touch-action: pan-y pinch-zoom;
-}
-
-/* Fix button active states */
-.touch-feedback:active {
-  opacity: 0.7 !important;
-  transform: scale(0.98);
-  transition: all 0.2s ease;
-}
-
-/* Prevent unwanted selection */
-.no-select {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-/* Fix iOS tap highlight */
-.no-tap-highlight {
-  -webkit-tap-highlight-color: transparent;
-  tap-highlight-color: transparent;
-}
-
-/* Add proper spacing for touch targets */
-.touch-spacing > * {
-  margin: 0.75rem 0;
-}
-
-/* iOS-specific text rendering */
-.ios-text {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Add specific mobile navbar styles */
-@media (max-width: 640px) {
-  .navbar-mobile {
-    background-color: white !important;
-    padding: 0.5rem 1rem;
+/* iOS-specific styles */
+@supports (-webkit-touch-callout: none) {
+  /* Fix iOS button appearance */
+  button, 
+  .button {
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
   }
-  
-  .navbar-menu-mobile {
-    background-color: white !important;
-    padding-top: 1.5rem;
+
+  /* Fix iOS tap highlight */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fix iOS scroll behavior */
+  .ios-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
+  }
+
+  /* Fix iOS text rendering */
+  body {
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Android-specific styles */
+@supports not (-webkit-touch-callout: none) {
+  /* Fix Android button ripple effect */
+  button,
+  .button {
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Fix Android tap highlight */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    tap-highlight-color: transparent;
+  }
+}
+
+/* Header specific mobile styles */
+@media (max-width: 640px) {
+  /* Ensure header is always white */
+  header {
+    background-color: #ffffff !important;
+  }
+
+  /* Fix mobile menu background */
+  nav {
+    background-color: #ffffff !important;
+  }
+}
+
+/* Fix button width on mobile */
+@media (max-width: 640px) {
+  .mobile-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Safe area insets for modern mobile browsers */
+@supports (padding: max(0px)) {
+  .safe-area-padding {
+    padding-left: max(env(safe-area-inset-left), 1rem);
+    padding-right: max(env(safe-area-inset-right), 1rem);
+    padding-top: max(env(safe-area-inset-top), 1rem);
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
   }
 }
