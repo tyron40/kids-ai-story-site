@@ -2,12 +2,14 @@ import type { Config } from "drizzle-kit"
 import * as dotenv from "dotenv"
 dotenv.config()
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is required")
+const databaseUrl = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL
+
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL or NEXT_PUBLIC_DATABASE_URL environment variable is required")
 }
 
 // Parse connection string
-const connectionString = new URL(process.env.DATABASE_URL)
+const connectionString = new URL(databaseUrl)
 
 export default {
   schema: "./config/schema.ts",
@@ -19,7 +21,9 @@ export default {
     user: connectionString.username,
     password: connectionString.password,
     database: connectionString.pathname.substring(1),
-    ssl: "require"  // Using the string literal type as specified in the error
+    ssl: {
+      rejectUnauthorized: false // Required for some hosting platforms
+    }
   },
   strict: true,
   verbose: true,

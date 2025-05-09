@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@nextui-org/button"
@@ -27,57 +27,20 @@ const MenuList = [
 export default function Header() {
   const { isSignedIn } = useUser()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isIOS, setIsIOS] = useState(false)
-
-  useEffect(() => {
-    // Detect iOS
-    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-    setIsIOS(isIOSDevice)
-  }, [])
-
-  // Prevent body scroll when menu is open on iOS
-  useEffect(() => {
-    if (isIOS && typeof document !== 'undefined') {
-      document.body.style.overflow = isMenuOpen ? 'hidden' : ''
-    }
-    return () => {
-      if (isIOS && typeof document !== 'undefined') {
-        document.body.style.overflow = ''
-      }
-    }
-  }, [isMenuOpen, isIOS])
 
   return (
     <>
-      {/* iOS status bar spacer */}
-      <div 
-        className="fixed top-0 left-0 right-0 z-50 bg-white" 
-        style={{ height: 'env(safe-area-inset-top)' }}
-      />
+      <div className="ios-status-bar" />
       
-      {/* Header */}
-      <header 
-        className="fixed left-0 right-0 z-40 bg-white border-b"
-        style={{ 
-          top: 'env(safe-area-inset-top)',
-          WebkitBackdropFilter: 'saturate(180%) blur(5px)',
-          backdropFilter: 'saturate(180%) blur(5px)',
-        }}
-      >
+      <header className="ios-header">
         {/* Main header content */}
         <div className="px-4 h-16 flex items-center justify-between bg-white">
           {/* Left section */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 sm:hidden touch-friendly"
+              className="p-2 sm:hidden touch-friendly no-tap-highlight"
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-              style={{
-                WebkitTapHighlightColor: 'transparent',
-                WebkitTouchCallout: 'none',
-                WebkitUserSelect: 'none',
-              }}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 {isMenuOpen ? (
@@ -89,8 +52,7 @@ export default function Header() {
             </button>
             <Link 
               href="/" 
-              className="flex items-center gap-3"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
+              className="flex items-center gap-3 no-tap-highlight"
             >
               <Image src="/logo.svg" alt="logo" width={40} height={40} priority />
               <h2 className="font-bold text-2xl text-primary">Kidso Story</h2>
@@ -103,8 +65,7 @@ export default function Header() {
               <Link
                 key={item.path}
                 href={item.path}
-                className="text-xl text-primary font-medium hover:underline"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                className="text-xl text-primary font-medium hover:underline no-tap-highlight"
               >
                 {item.name}
               </Link>
@@ -115,15 +76,11 @@ export default function Header() {
           <div className="flex items-center gap-4">
             <Link 
               href="/dashboard"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
+              className="no-tap-highlight"
             >
               <Button 
                 color="primary" 
-                className="touch-friendly"
-                style={{
-                  WebkitAppearance: 'none',
-                  WebkitTapHighlightColor: 'transparent',
-                }}
+                className="touch-friendly mobile-button"
               >
                 {isSignedIn ? "Dashboard" : "Get Started"}
               </Button>
@@ -134,23 +91,13 @@ export default function Header() {
 
         {/* Mobile menu */}
         {isMenuOpen && (
-          <nav 
-            className="fixed left-0 right-0 bottom-0 bg-white border-t overflow-y-auto ios-scroll"
-            style={{ 
-              top: `calc(env(safe-area-inset-top) + 4rem)`,
-              height: `calc(100vh - env(safe-area-inset-top) - 4rem)`,
-            }}
-          >
+          <nav className="mobile-menu smooth-scroll">
             {MenuList.map((item) => (
               <Link
                 key={item.path}
                 href={item.path}
-                className="block px-4 py-3 text-lg text-primary hover:bg-gray-50 touch-friendly"
+                className="block px-4 py-3 text-lg text-primary hover:bg-gray-50 touch-friendly no-tap-highlight"
                 onClick={() => setIsMenuOpen(false)}
-                style={{
-                  WebkitTapHighlightColor: 'transparent',
-                  WebkitTouchCallout: 'none',
-                }}
               >
                 {item.name}
               </Link>
@@ -159,8 +106,7 @@ export default function Header() {
         )}
       </header>
 
-      {/* Content spacer */}
-      <div style={{ height: `calc(env(safe-area-inset-top) + 4rem)` }} />
+      <div className="ios-content-spacer" />
     </>
   )
 }

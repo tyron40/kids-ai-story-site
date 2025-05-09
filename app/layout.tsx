@@ -40,14 +40,7 @@ export default function RootLayout({
           <meta name="format-detection" content="telephone=no" />
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         </head>
-        <body 
-          className={`${MyAppFont.className} bg-white min-h-full`}
-          style={{
-            WebkitTouchCallout: 'none',
-            WebkitTapHighlightColor: 'transparent',
-            WebkitOverflowScrolling: 'touch'
-          }}
-        >
+        <body className={`${MyAppFont.className} bg-white min-h-full no-touch-callout no-tap-highlight smooth-scroll`}>
           <Provider>{children}</Provider>
         </body>
       </html>

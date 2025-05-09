@@ -1,118 +1,128 @@
-/* iOS-specific viewport and safe area handling */
-@supports (padding-top: env(safe-area-inset-top)) {
-  :root {
-    --safe-area-inset-top: env(safe-area-inset-top);
-    --safe-area-inset-bottom: env(safe-area-inset-bottom);
-    --safe-area-inset-left: env(safe-area-inset-left);
-    --safe-area-inset-right: env(safe-area-inset-right);
+/* Base styles */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+}
+
+/* Common mobile styles */
+.touch-friendly {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.75rem;
+  touch-action: manipulation;
+}
+
+/* iOS and cross-browser compatibility */
+.ios-safe-padding {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.ios-header {
+  position: fixed;
+  top: var(--safe-area-inset-top);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background-color: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: saturate(180%) blur(5px);
+  backdrop-filter: saturate(180%) blur(5px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ios-status-bar {
+  height: var(--safe-area-inset-top);
+  background-color: #ffffff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+}
+
+.ios-content-spacer {
+  height: calc(var(--safe-area-inset-top) + 4rem);
+}
+
+.no-touch-callout {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+
+.no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.smooth-scroll {
+  scroll-behavior: smooth;
+  overflow-y: auto;
+  height: 100%;
+  position: relative;
+  touch-action: pan-y pinch-zoom;
+}
+
+.mobile-menu {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  height: auto;
+  max-height: calc(100vh - var(--safe-area-inset-top) - 4rem);
+  touch-action: pan-y pinch-zoom;
+}
+
+.mobile-button {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  min-height: 44px;
+  margin-bottom: var(--safe-area-inset-bottom);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.mobile-image {
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+  touch-action: none;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 640px) {
+  .mobile-full-width {
+    width: 100%;
+    max-width: 100%;
   }
 
-  body {
-    padding-top: var(--safe-area-inset-top);
+  .mobile-button {
+    width: 100%;
+    padding: 0.75rem;
+    margin: 0;
+  }
+}
+
+/* Active states */
+@media (hover: none) {
+  .touch-feedback:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+    transition: all 0.2s ease;
   }
 }
 
 /* iOS-specific fixes */
 @supports (-webkit-touch-callout: none) {
-  /* Fix button appearance */
-  button,
-  .button {
-    -webkit-appearance: none !important;
-    appearance: none !important;
-    -webkit-tap-highlight-color: transparent !important;
-    -webkit-touch-callout: none !important;
-    -webkit-user-select: none !important;
-    background-clip: padding-box !important;
+  .smooth-scroll,
+  .mobile-menu {
+    position: fixed;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    touch-action: pan-y pinch-zoom;
   }
-
-  /* Fix link tap highlight */
-  a {
-    -webkit-tap-highlight-color: transparent !important;
-    -webkit-touch-callout: none !important;
-  }
-
-  /* Fix header background */
-  header {
-    background-color: #ffffff !important;
-    -webkit-backdrop-filter: saturate(180%) blur(5px) !important;
-    backdrop-filter: saturate(180%) blur(5px) !important;
-  }
-
-  /* Fix mobile menu */
-  nav {
-    background-color: #ffffff !important;
-  }
-
-  /* Fix scrolling */
-  body {
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior-y: none !important;
-  }
-}
-
-/* Common mobile styles */
-.touch-friendly {
-  min-height: 44px !important;
-  min-width: 44px !important;
-  padding: 0.75rem !important;
-  touch-action: manipulation !important;
-}
-
-.no-tap-highlight {
-  -webkit-tap-highlight-color: transparent !important;
-  tap-highlight-color: transparent !important;
-}
-
-/* Fix button width on mobile */
-@media (max-width: 640px) {
-  .mobile-full-width {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
-  /* Ensure white background on mobile */
-  header, 
-  nav,
-  .navbar-mobile,
-  .navbar-menu-mobile {
-    background-color: #ffffff !important;
-  }
-
-  /* Fix button appearance */
-  button,
-  .button {
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0.75rem !important;
-  }
-}
-
-/* Fix iOS momentum scrolling */
-.ios-scroll {
-  -webkit-overflow-scrolling: touch !important;
-  overflow-y: auto !important;
-  overscroll-behavior-y: none !important;
-  touch-action: pan-y pinch-zoom !important;
-}
-
-/* Fix iOS text rendering */
-.ios-text {
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-  text-rendering: optimizeLegibility !important;
-}
-
-/* Fix iOS button active states */
-.touch-feedback:active {
-  opacity: 0.7 !important;
-  transform: scale(0.98) !important;
-  transition: all 0.2s ease !important;
-}
-
-/* Fix iOS safe area insets */
-.safe-area-padding {
-  padding-top: max(env(safe-area-inset-top), 1rem) !important;
-  padding-bottom: max(env(safe-area-inset-bottom), 1rem) !important;
-  padding-left: max(env(safe-area-inset-left), 1rem) !important;
-  padding-right: max(env(safe-area-inset-right), 1rem) !important;
 }
