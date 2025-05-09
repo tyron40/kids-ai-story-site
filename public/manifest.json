@@ -1,0 +1,104 @@
+{
+  "name": "Kidso Story",
+  "short_name": "Kidso",
+  "description": "Turn your child's imagination into magical stories instantly",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Create Story",
+      "short_name": "Create",
+      "description": "Create a new story",
+      "url": "/create-story",
+      "icons": [{ "src": "/icons/create.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Stories",
+      "short_name": "Stories",
+      "description": "View your stories",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/stories.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Homescreen of Kidso Story"
+    },
+    {
+      "src": "/screenshots/create.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Create Story Screen"
+    }
+  ],
+  "prefer_related_applications": false,
+  "categories": ["education", "kids", "books"],
+  "lang": "en",
+  "dir": "ltr",
+  "display_override": ["standalone", "fullscreen"],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}

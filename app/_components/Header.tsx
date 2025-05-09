@@ -28,21 +28,34 @@ export default function Header() {
   const { isSignedIn } = useUser()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen)
+    document.body.style.overflow = !isMenuOpen ? 'hidden' : ''
+  }
+
   return (
     <>
       <div className="ios-status-bar" />
       
       <header className="ios-header">
-        {/* Main header content */}
         <div className="px-4 h-16 flex items-center justify-between bg-white">
           {/* Left section */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 sm:hidden touch-friendly no-tap-highlight"
+              onClick={toggleMenu}
+              className={`p-2 sm:hidden touch-friendly no-tap-highlight touch-feedback ${
+                isMenuOpen ? 'rotate-180' : ''
+              } transition-transform duration-200`}
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg 
+                width="24" 
+                height="24" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2"
+              >
                 {isMenuOpen ? (
                   <path d="M6 18L18 6M6 6l12 12" />
                 ) : (
@@ -52,9 +65,18 @@ export default function Header() {
             </button>
             <Link 
               href="/" 
-              className="flex items-center gap-3 no-tap-highlight"
+              className="flex items-center gap-3 no-tap-highlight touch-feedback"
             >
-              <Image src="/logo.svg" alt="logo" width={40} height={40} priority />
+              <div className="relative w-10 h-10">
+                <Image 
+                  src="/logo.svg" 
+                  alt="logo" 
+                  fill
+                  sizes="40px"
+                  className="mobile-image"
+                  priority 
+                />
+              </div>
               <h2 className="font-bold text-2xl text-primary">Kidso Story</h2>
             </Link>
           </div>
@@ -65,7 +87,7 @@ export default function Header() {
               <Link
                 key={item.path}
                 href={item.path}
-                className="text-xl text-primary font-medium hover:underline no-tap-highlight"
+                className="text-xl text-primary font-medium hover:underline no-tap-highlight touch-feedback"
               >
                 {item.name}
               </Link>
@@ -80,29 +102,35 @@ export default function Header() {
             >
               <Button 
                 color="primary" 
-                className="touch-friendly mobile-button"
+                className="mobile-button touch-friendly touch-feedback"
               >
                 {isSignedIn ? "Dashboard" : "Get Started"}
               </Button>
             </Link>
-            <UserButton />
+            <div className="touch-friendly">
+              <UserButton />
+            </div>
           </div>
         </div>
 
         {/* Mobile menu */}
         {isMenuOpen && (
-          <nav className="mobile-menu smooth-scroll">
-            {MenuList.map((item) => (
-              <Link
-                key={item.path}
-                href={item.path}
-                className="block px-4 py-3 text-lg text-primary hover:bg-gray-50 touch-friendly no-tap-highlight"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
+          <div className="fixed inset-0 bg-black/50 z-30 sm:hidden">
+            <nav className="mobile-menu smooth-scroll">
+              <div className="bg-white h-[calc(100vh-4rem)] pt-4">
+                {MenuList.map((item) => (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    className="block px-4 py-3 text-lg text-primary hover:bg-gray-50 touch-friendly no-tap-highlight touch-feedback"
+                    onClick={toggleMenu}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+          </div>
         )}
       </header>
 

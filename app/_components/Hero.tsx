@@ -11,38 +11,39 @@ export default function Hero() {
   }
 
   return (
-    <div className="px-4 sm:px-8 md:px-28 lg:px-44 min-h-[calc(100vh-env(safe-area-inset-top)-4rem)] ios-safe-padding">
+    <div className="mobile-container ios-safe-padding">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center py-6">
-        <div className="order-2 md:order-1 flex flex-col">
-          <h2 className="text-xl sm:text-2xl lg:text-3xl text-primary font-extrabold py-4">
+        <div className="order-2 md:order-1 flex flex-col mobile-padding">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl text-primary font-extrabold py-4 mobile-full-width">
             Turn Your Child&apos;s Imagination into Magical Stories Instantly
           </h2>
-          <p className="text-base sm:text-lg text-primary font-light mb-6">
+          <p className="text-base sm:text-lg text-primary font-light mb-6 mobile-full-width">
             Design unique and exciting tales that turn your child into the hero of their own story 
             inspiring creativity and a love for reading in just a few clicks!
           </p>
           
-          {/* Create Story Button with enhanced mobile handling */}
           <div className="w-full sm:w-auto no-touch-callout">
             <Button
               size="lg"
               color="primary"
               onPress={handleCreateStory}
-              className="w-full sm:w-auto px-6 py-3 text-base font-bold touch-friendly mobile-button no-tap-highlight"
+              className="mobile-button touch-friendly no-tap-highlight touch-feedback"
             >
               Create Story
             </Button>
           </div>
         </div>
-        <div className="order-1 md:order-2">
-          <Image 
-            src="/hero.png" 
-            alt="hero" 
-            width={700} 
-            height={400}
-            className="w-full h-auto object-contain mobile-image"
-            priority
-          />
+        <div className="order-1 md:order-2 mobile-padding">
+          <div className="relative w-full aspect-[16/9] md:aspect-[4/3] lg:aspect-[16/9]">
+            <Image 
+              src="/hero.png" 
+              alt="hero" 
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 700px"
+              className="mobile-image object-contain"
+              priority
+            />
+          </div>
         </div>
       </div>
     </div>

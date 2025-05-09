@@ -4,6 +4,8 @@
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-inset-left: env(safe-area-inset-left, 0px);
   --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --header-height: 4rem;
+  --mobile-menu-height: 3.5rem;
 }
 
 /* Common mobile styles */
@@ -12,6 +14,16 @@
   min-width: 44px;
   padding: 0.75rem;
   touch-action: manipulation;
+}
+
+/* Enhanced mobile layout */
+.mobile-container {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  min-height: -webkit-fill-available;
+  min-height: 100vh;
+  width: 100%;
 }
 
 /* iOS and cross-browser compatibility */
@@ -24,11 +36,14 @@
   top: var(--safe-area-inset-top);
   left: 0;
   right: 0;
+  height: var(--header-height);
   z-index: 40;
   background-color: rgba(255, 255, 255, 0.95);
   -webkit-backdrop-filter: saturate(180%) blur(5px);
   backdrop-filter: saturate(180%) blur(5px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .ios-status-bar {
@@ -42,9 +57,10 @@
 }
 
 .ios-content-spacer {
-  height: calc(var(--safe-area-inset-top) + 4rem);
+  height: calc(var(--safe-area-inset-top) + var(--header-height));
 }
 
+/* Touch interaction improvements */
 .no-touch-callout {
   -webkit-user-select: none;
   user-select: none;
@@ -53,8 +69,10 @@
 
 .no-tap-highlight {
   -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
+/* Improved scrolling */
 .smooth-scroll {
   scroll-behavior: smooth;
   overflow-y: auto;
@@ -63,34 +81,63 @@
   touch-action: pan-y pinch-zoom;
 }
 
+/* Enhanced mobile menu */
 .mobile-menu {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
+  height: var(--mobile-menu-height);
   background-color: #ffffff;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
-  overflow-y: auto;
-  height: auto;
-  max-height: calc(100vh - var(--safe-area-inset-top) - 4rem);
-  touch-action: pan-y pinch-zoom;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  z-index: 30;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
+/* Enhanced button styles */
 .mobile-button {
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
   min-height: 44px;
+  padding: 0.75rem 1rem;
   margin-bottom: var(--safe-area-inset-bottom);
   -webkit-user-select: none;
   user-select: none;
+  position: relative;
+  transform: translateZ(0);
+  will-change: transform;
+  transition: transform 0.2s ease;
 }
 
+.mobile-button:active {
+  transform: scale(0.98);
+}
+
+/* Image optimizations */
 .mobile-image {
   -webkit-user-select: none;
   user-select: none;
   pointer-events: none;
   touch-action: none;
+  object-fit: cover;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Form inputs */
+.mobile-input {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
+  padding: 0.75rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  font-size: 1rem;
 }
 
 /* Mobile-specific styles */
@@ -98,12 +145,26 @@
   .mobile-full-width {
     width: 100%;
     max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
   }
 
-  .mobile-button {
-    width: 100%;
-    padding: 0.75rem;
-    margin: 0;
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .mobile-margin {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+
+  .mobile-hidden {
+    display: none;
+  }
+
+  .mobile-only {
+    display: block;
   }
 }
 
@@ -116,7 +177,7 @@
   }
 }
 
-/* iOS-specific fixes */
+/* Platform-specific fixes */
 @supports (-webkit-touch-callout: none) {
   .smooth-scroll,
   .mobile-menu {
@@ -124,5 +185,33 @@
     overflow-y: auto;
     scroll-behavior: smooth;
     touch-action: pan-y pinch-zoom;
+  }
+
+  /* Fix for iOS vh bug */
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Android-specific fixes */
+@supports not (-webkit-touch-callout: none) {
+  .mobile-button:active {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1));
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .ios-header,
+  .ios-status-bar,
+  .mobile-menu {
+    background-color: rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .mobile-input {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
   }
 }
