@@ -62,7 +62,11 @@
     }
   },
   "functions": {
-    "app/api/**/*.ts": {
+    "app/api/*/route.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    },
+    "app/api/*/route.tsx": {
       "memory": 1024,
       "maxDuration": 60
     },
