@@ -1,5 +1,3 @@
-import withPWA from 'next-pwa'
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -20,117 +18,43 @@ const nextConfig = {
     optimizeCss: true,
     scrollRestoration: true,
   },
-}
-
-const withPWAConfig = withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  publicExcludes: ['!**/*'],
-  buildExcludes: [() => true],
-  runtimeCaching: [
+  headers: async () => [
     {
-      urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'firebase-images',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+      source: '/:path*',
+      headers: [
+        {
+          key: 'Cross-Origin-Opener-Policy',
+          value: 'same-origin',
         },
-      },
+        {
+          key: 'Cross-Origin-Embedder-Policy',
+          value: 'require-corp',
+        },
+      ],
     },
     {
-      urlPattern: /^https:\/\/replicate\.delivery\/.*/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'replicate-images',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+      source: '/manifest.json',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=0, must-revalidate',
         },
-      },
+      ],
     },
     {
-      urlPattern: /^https:\/\/img\.clerk\.com\/.*/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'clerk-images',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+      source: '/icons/:path*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
         },
-      },
-    },
-    {
-      urlPattern: /\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'static-font-assets',
-        expiration: {
-          maxEntries: 4,
-          maxAgeSeconds: 60 * 60 * 24 * 365, // 365 days
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:jpg|jpeg|gif|png|svg|ico|webp|avif)$/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'static-image-assets',
-        expiration: {
-          maxEntries: 64,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:js)$/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'static-js-assets',
-        expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:css|less)$/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'static-style-assets',
-        expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:json|xml|csv)$/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'static-data-assets',
-        expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 60 * 60 * 24, // 24 hours
-        },
-      },
-    },
-    {
-      urlPattern: /.*/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'others',
-        expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 60 * 60 * 24, // 24 hours
-        },
-        networkTimeoutSeconds: 10,
-      },
+      ],
     },
   ],
-})
+  webpack: (config) => {
+    config.optimization.minimize = true;
+    return config;
+  },
+}
 
-export default withPWAConfig(nextConfig)
+export default nextConfig;
